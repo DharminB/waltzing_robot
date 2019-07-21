@@ -14,7 +14,7 @@ where
     RADIUS = 0.01
     T_MAX = 2.0
 ```
-[plot](docs/plot.png)
+![plot](docs/plot.png)
 
 The plot can also be visualised [here](https://www.desmos.com/calculator).
 
