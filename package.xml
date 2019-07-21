@@ -1,0 +1,20 @@
+<package>
+  <name>waltzing_robot</name>
+  <version>1.0.0</version>
+  <description>
+  Make a planar mobile robot waltz dance
+  </description>
+  <license>GPLv3</license>
+
+  <author email="dharmingeo@gmail.com">Dharmin B.</author>
+
+  <maintainer email="dharmingeo@gmail.com">Dharmin B.</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>rospy</build_depend>
+
+  <run_depend>rospy</run_depend>
+
+  <test_depend>roslaunch</test_depend>
+</package>
