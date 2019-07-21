@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
+        <param name="cmd_vel" type="str" value="/ropod/cmd_vel" />
+
+        <!-- <param name="" type="double" value="" /> -->
+    </node>
+</launch>
