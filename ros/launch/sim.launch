@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Gazebo server -->
+    <include file="$(find ropod_sim_model)/launch/simulator/ropod_origin_gazebo_simulator.launch">
+        <arg name="gui" value="false" />
+    </include>
+
+    <!-- rviz for visualisation -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find waltzing_robot)/waltz_ropod.rviz" />
+
+    <!-- ros tf frame pub -->
+    <node pkg="waltzing_robot" type="ros_frame_pub.py" name="ros_frame_pub" args="-d $(find waltzing_robot)/waltz_ropod.rviz" />
+
+</launch>
