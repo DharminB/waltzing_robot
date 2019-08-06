@@ -30,16 +30,32 @@ class Waypoint(object):
         string += 'vel_curve: ' + str(self.vel_curve) + '\n'
         return string
 
+    def __sub__(self, other):
+        assert isinstance(other, Waypoint)
+        return {'x': self.x - other.x,
+                'y': self.y - other.y,
+                'theta': self.theta - other.theta,
+                'time': self.time - other.time,
+                'vel_curve': self.vel_curve}
+
     def to_pose(self):
         """Return a Pose object representing waypoint
         :returns: geometry_msgs.Pose
 
         """
-        pose = Pose()
-        pose.position.x = self.x
-        pose.position.y = self.y
+        return Waypoint.get_pose_from_x_y_theta(self.x, self.y, self.theta)
 
-        quat = tf.transformations.quaternion_from_euler(0.0, 0.0, self.theta)
+    @staticmethod
+    def get_pose_from_x_y_theta(x, y, theta):
+        """Return a Pose object from x, y and theta
+        :returns: geometry_msgs.Pose
+
+        """
+        pose = Pose()
+        pose.position.x = x
+        pose.position.y = y
+
+        quat = tf.transformations.quaternion_from_euler(0.0, 0.0, theta)
         pose.orientation.x = quat[0]
         pose.orientation.y = quat[1]
         pose.orientation.z = quat[2]
