@@ -1,4 +1,4 @@
-frame: 'ropod/odom'
+frame: 'odom'
 default_vel_curve: 'square'
 waypoints:
     - x: 2.0

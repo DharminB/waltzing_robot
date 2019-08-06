@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+
+    <!-- Robot description for rviz -->
+    <param name="robot_description" textfile="$(find waltzing_robot)/ros/config/ropod.urdf" />
+
     <!-- Gazebo server -->
     <include file="$(find ropod_sim_model)/launch/simulator/ropod_origin_gazebo_simulator.launch">
         <arg name="gui" value="false" />
@@ -11,4 +15,6 @@
     <!-- ros tf frame pub -->
     <node pkg="waltzing_robot" type="ros_frame_pub.py" name="ros_frame_pub" />
 
+
+    <node pkg="robot_state_publisher" name="robot_state_publisher" type="state_publisher" />
 </launch>

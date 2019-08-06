@@ -1,11 +1,18 @@
 # Waltzing robot
 
-Make a planar mobile robot waltz dance.
+Make a planar mobile robot 
+- simple waltz dance or
+- follow choreography using waypoints
 
 ## Dependencies
 - [ropod_sim_model](https://github.com/ropod-project/ropod_sim_model)
 
-## Velocity curve
+## Waypoint choreography (under development)
+
+### Trajectory using linear velocity
+![rvizImage](docs/waltz_trajectory.png)
+
+## Simple waltz
 ```
 v = V_MAX * (RADIUS ^ (t / T_MAX))
 
