@@ -1,0 +1,19 @@
+frame: 'ropod/odom'
+default_vel_curve: 'square'
+waypoints:
+    - x: 2.0
+      y: 0.0
+      theta: 0.0
+      time: 2.0
+    - x: 2.0
+      y: 2.0
+      theta: 0.0
+      time: 4.0
+    - x: 0.0
+      y: 2.0
+      theta: 0.0
+      time: 6.0
+    - x: 0.0
+      y: 0.0
+      theta: 0.0
+      time: 8.0
