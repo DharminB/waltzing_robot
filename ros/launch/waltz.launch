@@ -1,8 +1,14 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
-        <param name="cmd_vel" type="str" value="/ropod/cmd_vel" />
 
+        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
+        <param name="waypoints_topic" type="str" value="/ropod/waypoints" />
         <!-- <param name="" type="double" value="" /> -->
+
+        <!-- Waypoints config file -->
+        <rosparam command="load" param="waypoint_config"
+                  file="$(find waltzing_robot)/ros/config/waypoints/square.yaml" />
+
     </node>
 </launch>

@@ -3,17 +3,39 @@
 from __future__ import print_function
 
 import rospy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PoseArray
+from waltzing_robot.waypoints import Waypoints
 
 class Waltzer(object):
 
     """Waltzer ros node"""
 
     def __init__(self):
-        cmd_vel_topic = rospy.get_param('~cmd_vel', '/cmd_vel')
+        # read ros param
+        cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
+        waypoint_config = rospy.get_param('~waypoint_config', None)
+        waypoints_topic = rospy.get_param('~waypoint_topic', '/ropod/waypoints')
+
+        # class variables
+        if waypoint_config is not None:
+            self.waypoints = Waypoints(waypoint_config=waypoint_config)
+        else:
+            self.waypoints = Waypoints()
+
+        # publishers
         self.cmd_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=1)
+        self.waypoints_pub = rospy.Publisher(waypoints_topic, PoseArray, queue_size=1)
+
+        # subscribers
+        
+        self.waypoints_pub.publish(self.waypoints.to_pose_array())
+        print(self.waypoints)
 
     def waltz(self):
+        """ Make the robot follow waltz type motion in a square
+        :returns: None
+
+        """
         rospy.loginfo('[Waltzer] Starting waltzing')
         # hack to make the simulation return actual time
         while rospy.get_time() <= 0.0:
@@ -68,4 +90,4 @@ class Waltzer(object):
 if __name__ == "__main__":
     rospy.init_node('waltzer')
     WALTZER = Waltzer()
-    WALTZER.waltz()
+    # WALTZER.waltz()
