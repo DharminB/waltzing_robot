@@ -11,6 +11,7 @@ Make a planar mobile robot
 
 ### Trajectory using linear velocity
 ![rvizImage](docs/waltz_trajectory.png)
+![rvizImage](docs/square_clockwise_linear.png)
 
 ## Simple waltz
 ```
