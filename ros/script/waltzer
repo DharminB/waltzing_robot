@@ -89,7 +89,12 @@ class Waltzer(object):
         for wp in self.waypoints.waypoints:
             self._vel_curve_handler.set_delta(wp - current)
             while current_time < wp.time:
-                x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(current_time - current.time)
+                # current position has to be given (0,0,0) because the cmd_vel
+                # are applied in robot's frame whereas the poses are published
+                # in global frame
+                x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(
+                        current_time - current.time,
+                        (0.0, 0.0, 0.0))
                 x += x_vel*delta_time
                 y += y_vel*delta_time
                 theta += theta_vel*delta_time
@@ -164,5 +169,5 @@ if __name__ == "__main__":
     rospy.init_node('waltzer')
     WALTZER = Waltzer()
     # WALTZER.waltz()
-    WALTZER.follow_waypoints()
-    # WALTZER.visualise_trajectory()
+    # WALTZER.follow_waypoints()
+    WALTZER.visualise_trajectory()
