@@ -2,9 +2,11 @@
 
 from __future__ import print_function
 
+import math
 import tf
 import rospy
 from geometry_msgs.msg import PoseArray, Pose
+from waltzing_robot.utils import Utils
 
 class Waypoint(object):
 
@@ -34,7 +36,7 @@ class Waypoint(object):
         assert isinstance(other, Waypoint)
         return {'x': self.x - other.x,
                 'y': self.y - other.y,
-                'theta': self.theta - other.theta,
+                'theta': math.atan2(math.sin(self.theta - other.theta), math.cos(self.theta - other.theta)),
                 'time': self.time - other.time,
                 'vel_curve': self.vel_curve}
 
@@ -43,24 +45,8 @@ class Waypoint(object):
         :returns: geometry_msgs.Pose
 
         """
-        return Waypoint.get_pose_from_x_y_theta(self.x, self.y, self.theta)
+        return Utils.get_pose_from_x_y_theta(self.x, self.y, self.theta)
 
-    @staticmethod
-    def get_pose_from_x_y_theta(x, y, theta):
-        """Return a Pose object from x, y and theta
-        :returns: geometry_msgs.Pose
-
-        """
-        pose = Pose()
-        pose.position.x = x
-        pose.position.y = y
-
-        quat = tf.transformations.quaternion_from_euler(0.0, 0.0, theta)
-        pose.orientation.x = quat[0]
-        pose.orientation.y = quat[1]
-        pose.orientation.z = quat[2]
-        pose.orientation.w = quat[3]
-        return pose
 
 class Waypoints(object):
     """

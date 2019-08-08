@@ -1,5 +1,9 @@
 #! /usr/bin/env python
 
+from __future__ import print_function
+import math
+from waltzing_robot.utils import Utils
+
 class VelCurveHandler(object):
 
     """Handle the motion of the robot based on the velocity curve
@@ -45,14 +49,17 @@ class VelCurveHandler(object):
         assert self.vel_curve in self._vel_curve_func
         self.get_vel = self._vel_curve_func[self.vel_curve]
 
-    def default_vel(self, time_duration):
+    def default_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
         return (0.0, 0.0, 0.0)
 
-    def square_vel(self, time_duration):
+    def square_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
         if time_duration >= self.time:
             self.get_vel = self._vel_curve_func['default']
             return (0.0, 0.0, 0.0)
-        return (self.x/self.time, self.y/self.time, 0.0)
+        omega = Utils.get_shortest_angle(math.atan2(self.y, self.x), current_position[2])
+        vel = Utils.get_distance(self.x, self.y)/self.time
+        return (vel * math.cos(omega), vel * math.sin(omega), self.theta/self.time)
 
-    def linear_vel(self, time_duration):
+    def linear_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
         return (0.0, 0.0, 0.0)
+

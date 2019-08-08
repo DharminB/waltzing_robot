@@ -5,8 +5,10 @@ from __future__ import print_function
 import rospy
 import time
 from geometry_msgs.msg import Twist, PoseArray
+from nav_msgs.msg import Odometry
 from waltzing_robot.waypoints import Waypoints, Waypoint
 from waltzing_robot.vel_curve_handler import VelCurveHandler
+from waltzing_robot.utils import Utils
 
 class Waltzer(object):
 
@@ -15,9 +17,11 @@ class Waltzer(object):
     def __init__(self):
         # read ros param
         cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
+        odom_topic = rospy.get_param('~odom_topic', '/ropod/odom_incomplete')
         waypoint_config = rospy.get_param('~waypoint_config', None)
         waypoints_topic = rospy.get_param('~waypoint_topic', '/ropod/waypoints')
         trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
+        sleep_duration = rospy.get_param('~sleep_duration', 0.1)
 
         # class variables
         self.frame_id = waypoint_config.get('frame', 'odom')
@@ -26,6 +30,7 @@ class Waltzer(object):
         else:
             self.waypoints = Waypoints()
         self._vel_curve_handler = VelCurveHandler()
+        self.current_position = (0.0, 0.0, 0.0)
 
         # publishers
         self._cmd_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=1)
@@ -33,9 +38,13 @@ class Waltzer(object):
         self._trajectory_pub = rospy.Publisher(trajectory_topic, PoseArray, queue_size=1)
 
         # subscribers
+        self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
         
         time.sleep(1) # sleep to initialise publishers completely
         self._waypoints_pub.publish(self.waypoints.to_pose_array())
+
+    def _odom_cb(self, msg):
+        self.current_position = Utils.get_x_y_theta_from_pose(msg.pose.pose)
 
     def follow_waypoints(self):
         """Follow waypoints defined by class variable with their vel curve motion
@@ -53,7 +62,9 @@ class Waltzer(object):
                 if rospy.is_shutdown():
                     self._cmd_vel_pub.publish(self._get_twist())
                     return
-                x, y, theta = self._vel_curve_handler.get_vel(rospy.get_time() - start_time - current.time)
+                x, y, theta = self._vel_curve_handler.get_vel(
+                        rospy.get_time() - start_time - current.time,
+                        self.current_position)
                 # print(x, y, theta)
                 self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
                 rospy.sleep(0.1)
@@ -82,7 +93,7 @@ class Waltzer(object):
                 x += x_vel*delta_time
                 y += y_vel*delta_time
                 theta += theta_vel*delta_time
-                pose = Waypoint.get_pose_from_x_y_theta(x, y, theta)
+                pose = Utils.get_pose_from_x_y_theta(x, y, theta)
                 poses.append(pose)
                 current_time += delta_time
                 # time.sleep(delta_time)
@@ -153,5 +164,5 @@ if __name__ == "__main__":
     rospy.init_node('waltzer')
     WALTZER = Waltzer()
     # WALTZER.waltz()
-    # WALTZER.follow_waypoints()
-    WALTZER.visualise_trajectory()
+    WALTZER.follow_waypoints()
+    # WALTZER.visualise_trajectory()
