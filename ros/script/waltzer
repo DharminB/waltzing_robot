@@ -23,6 +23,8 @@ class Waltzer(object):
         waypoints_topic = rospy.get_param('~waypoint_topic', '/ropod/waypoints')
         trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
+        max_vel = rospy.get_param('~max_vel', 8.0)
+        max_acc = rospy.get_param('~max_acc', 8.0)
 
         # class variables
         self.frame_id = waypoint_config.get('frame', 'odom')
@@ -30,7 +32,7 @@ class Waltzer(object):
             self.waypoints = Waypoints(waypoint_config=waypoint_config)
         else:
             self.waypoints = Waypoints()
-        self._vel_curve_handler = VelCurveHandler(max_vel=8.0, max_acc=8.0)
+        self._vel_curve_handler = VelCurveHandler(max_vel=max_vel, max_acc=max_acc)
         self.current_position = (0.0, 0.0, 0.0)
 
         # publishers
@@ -103,7 +105,10 @@ class Waltzer(object):
         pose_array.header.stamp = rospy.Time.now()
         poses = []
         for wp in self.waypoints.waypoints:
-            self._vel_curve_handler.set_delta(wp - current)
+            possible = self._vel_curve_handler.set_delta(wp - current)
+            if not possible:
+                rospy.loginfo("Impossible trajectory encountered. Stopping motion")
+                break
             while current_time < wp.time:
                 # current position has to be given (0,0,0) because the cmd_vel
                 # are applied in robot's frame whereas the poses are published
