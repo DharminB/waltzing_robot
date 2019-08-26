@@ -17,11 +17,8 @@ class VelCurveHandler(object):
         self.max_vel = kwargs.get('max_vel', float('inf'))
         self.max_acc = kwargs.get('max_acc', float('inf'))
         self.x, self.y, self.theta = None, None, None
-        self.time, self.vel_curve = None, None
-        self._vel_curve_func = {'default': self.default_vel,
-                           'square': self.square_vel,
-                           'linear': self.linear_vel}
-        self.get_vel = self._vel_curve_func['default']
+        self.time, self.vel_curve = None, "default"
+        self.curve_specific_data = dict()
 
     def __str__(self):
         string = ""
@@ -31,7 +28,8 @@ class VelCurveHandler(object):
         string += 'delta_y: ' + str(self.y) + '\n'
         string += 'delta_theta: ' + str(self.theta) + '\n'
         string += 'delta_time: ' + str(self.time) + '\n'
-        string += 'vel_curve: ' + str(self.vel_curve)
+        string += 'vel_curve: ' + str(self.vel_curve) + '\n'
+        string += 'curve_data: ' + str(self.curve_specific_data)
         return string
 
     def set_delta(self, delta_dict):

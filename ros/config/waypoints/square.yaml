@@ -1,5 +1,5 @@
 frame: 'odom'
-default_vel_curve: 'square'
+default_vel_curve: 'linear'
 waypoints:
     - x: 2.0
       y: 0.0
