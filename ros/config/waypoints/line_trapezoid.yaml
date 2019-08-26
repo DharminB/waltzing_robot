@@ -1,7 +1,7 @@
 frame: 'odom'
 default_vel_curve: 'trapezoid'
 waypoints:
-    - x: 2.0
+    - x: 8.0
       y: 0.0
       theta: 0.0
       time: 2.0

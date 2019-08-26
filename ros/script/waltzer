@@ -23,6 +23,8 @@ class Waltzer(object):
         waypoints_topic = rospy.get_param('~waypoint_topic', '/ropod/waypoints')
         trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
+        max_vel = rospy.get_param('~max_vel', 8.0)
+        max_acc = rospy.get_param('~max_acc', 8.0)
 
         # class variables
         self.frame_id = waypoint_config.get('frame', 'odom')
@@ -30,7 +32,7 @@ class Waltzer(object):
             self.waypoints = Waypoints(waypoint_config=waypoint_config)
         else:
             self.waypoints = Waypoints()
-        self._vel_curve_handler = VelCurveHandler(max_vel=8.0, max_acc=8.0)
+        self._vel_curve_handler = VelCurveHandler(max_vel=max_vel, max_acc=max_acc)
         self.current_position = (0.0, 0.0, 0.0)
 
         # publishers
@@ -103,7 +105,10 @@ class Waltzer(object):
         pose_array.header.stamp = rospy.Time.now()
         poses = []
         for wp in self.waypoints.waypoints:
-            self._vel_curve_handler.set_delta(wp - current)
+            possible = self._vel_curve_handler.set_delta(wp - current)
+            if not possible:
+                rospy.loginfo("Impossible trajectory encountered. Stopping motion")
+                break
             while current_time < wp.time:
                 # current position has to be given (0,0,0) because the cmd_vel
                 # are applied in robot's frame whereas the poses are published
@@ -124,33 +129,6 @@ class Waltzer(object):
         pose_array.poses = poses
         self._trajectory_pub.publish(pose_array)
 
-    def waltz(self):
-        """ Make the robot follow waltz type motion in a square
-        :returns: None
-
-        """
-        rospy.loginfo('[Waltzer] Starting waltzing')
-        # hack to make the simulation return actual time
-        while rospy.get_time() <= 0.0:
-            rospy.sleep(0.1)
-
-        timeout = 2.0
-        direction = [{'x':1, 'y':0}, {'x':0, 'y':1}, {'x':-1, 'y':0}, {'x':0, 'y':-1}]
-        for _ in range(3):
-            for i in range(len(direction)):
-                start_time = rospy.get_time()
-                while rospy.get_time() - start_time < timeout:
-                    if rospy.is_shutdown():
-                        self._cmd_vel_pub.publish(self._get_twist())
-                        return
-                    vel = self._get_vel_based_on_time(rospy.get_time() - start_time, timeout)
-                    self._cmd_vel_pub.publish(self._get_twist(
-                        x=vel*direction[i]['x'],
-                        y=vel*direction[i]['y']))
-                    rospy.sleep(0.2)
-        self._cmd_vel_pub.publish(self._get_twist())
-        rospy.loginfo('[Waltzer] Finished waltzing')
-
     def _get_twist(self, x=0.0, y=0.0, theta=0.0):
         """Return twist ros message object.
 
@@ -165,20 +143,6 @@ class Waltzer(object):
         msg.linear.y = y
         msg.angular.z = theta
         return msg
-
-    def _get_vel_based_on_time(self, t, tmax=2.0, vmax=4.0, r=0.01):
-        """
-        :t: float (between 0 and tmax)
-        :tmax: float (+ve)
-        :vmax: float (+ve) maximum velocity
-        :r: float (radius/damping factor)(between 0 and 1)
-        """
-        if t < 0:
-            return vmax
-        elif t > tmax:
-            return 0.0
-        else:
-            return vmax * (r ** (t/tmax))
 
 if __name__ == "__main__":
     rospy.init_node('waltzer')

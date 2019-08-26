@@ -52,7 +52,6 @@ class VelCurveHandler(object):
             return getattr(self, self.vel_curve+"_calc")()
         return False
 
-
     def get_vel(self, time_duration, **kwargs):
         return getattr(self, self.vel_curve+"_vel")(time_duration, **kwargs)
 
@@ -73,18 +72,22 @@ class VelCurveHandler(object):
 
     def trapezoid_calc(self):
         dist = Utils.get_distance(self.x, self.y)
-        des_vel_sol_1 = ((self.time * self.max_acc) + ((self.time * self.max_acc)**2 - (4 * self.max_acc * dist))**0.5)/2.0
-        des_vel_sol_2 = ((self.time * self.max_acc) - ((self.time * self.max_acc)**2 - (4 * self.max_acc * dist))**0.5)/2.0
-        if des_vel_sol_1 > self.max_vel:
-            self.curve_specific_data['vel'] = des_vel_sol_2
-        elif des_vel_sol_2 > self.max_vel:
-            self.curve_specific_data['vel'] = des_vel_sol_1
-        else:
+        discriminant = (self.time * self.max_acc)**2 - (4 * self.max_acc * dist)
+        if discriminant < 0:
             print("No velocity solution found")
+            return False
+        des_vel_sol_1 = ((self.time * self.max_acc) + (discriminant)**0.5)/2.0
+        des_vel_sol_2 = ((self.time * self.max_acc) - (discriminant)**0.5)/2.0
+        if des_vel_sol_1 <= self.max_vel:
+            self.curve_specific_data['vel'] = des_vel_sol_1
+        elif des_vel_sol_2 <= self.max_vel:
+            self.curve_specific_data['vel'] = des_vel_sol_2
+        else:
+            print("No valid velocity solution found. Found solutions: ", des_vel_sol_1, "and ", des_vel_sol_2)
             return False
         self.curve_specific_data['acc_time'] = self.curve_specific_data['vel']/self.max_acc
         self.curve_specific_data['const_vel_time'] = self.time - (2 * self.curve_specific_data['acc_time'])
-        # print(self.curve_specific_data)
+        print(self.curve_specific_data)
         return True
 
     def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
@@ -98,5 +101,5 @@ class VelCurveHandler(object):
             vel = self.max_acc * time_duration
         elif time_duration > self.time - self.curve_specific_data['acc_time']:
             # decelerate
-            vel = - self.max_acc * (time_duration - self.time + self.curve_specific_data['acc_time'])
+            vel -= self.max_acc * (time_duration - self.time + self.curve_specific_data['acc_time'])
         return (vel * math.cos(omega), vel * math.sin(omega), self.theta/self.time)
