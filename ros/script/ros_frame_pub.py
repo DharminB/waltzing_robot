@@ -5,7 +5,6 @@ from __future__ import print_function
 import rospy
 import tf
 from gazebo_msgs.msg import ModelStates
-from nav_msgs.msg import Odometry
 
 class ROSFramePub(object):
 
@@ -17,14 +16,10 @@ class ROSFramePub(object):
         self.tf_br = tf.TransformBroadcaster()
 
     def gazebo_model_state_cb(self, msg):
-        # rospy.loginfo(msg)
         robot_index = msg.name.index(self.robot_name)
-        # rospy.loginfo(msg.pose[robot_index].position)
-        # pos = [msg.pose[robot_index].position.x, msg.pose[robot_index].position.y, msg.pose[robot_index].position.z]
         pos = [msg.pose[robot_index].position.x, msg.pose[robot_index].position.y, msg.pose[robot_index].position.z]
         ori = [msg.pose[robot_index].orientation.x, msg.pose[robot_index].orientation.y, msg.pose[robot_index].orientation.z, msg.pose[robot_index].orientation.w]
         self.tf_br.sendTransform(pos, ori, rospy.Time.now(), '/base_link', '/odom')
-        # self.tf_br.sendTransform([0.3, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0], rospy.Time.now(), '/front_laser', '/base_link')
 
 if __name__ == "__main__":
     rospy.init_node('ros_frame_pub')

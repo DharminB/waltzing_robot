@@ -2,13 +2,16 @@
 <launch>
     <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
 
-        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
+        <param name="cmd_vel_topic" type="str" value="/cmd_vel" />
         <param name="waypoints_topic" type="str" value="/ropod/waypoints" />
+        <!-- <param name="localisation_topic" type="str" value="/fake_localisation" /> -->
+        <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
+        <!-- <param name="sleep_duration" type="double" value="0.02" /> -->
         <param name="sleep_duration" type="double" value="0.1" />
 
-        <!-- Waypoints config file -->
-        <rosparam command="load" param="waypoint_config"
-                  file="$(find waltzing_robot)/ros/config/waypoints/square.yaml" />
+        <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/square.yaml" /> -->
+        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/line_trapezoid.yaml" />
+        <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/square_trapezoid.yaml" /> -->
 
     </node>
 </launch>
