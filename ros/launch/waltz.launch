@@ -2,7 +2,7 @@
 <launch>
     <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
 
-        <param name="cmd_vel_topic" type="str" value="/cmd_vel" />
+        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
         <param name="waypoints_topic" type="str" value="/ropod/waypoints" />
         <!-- <param name="localisation_topic" type="str" value="/fake_localisation" /> -->
         <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
