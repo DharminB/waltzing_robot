@@ -15,5 +15,8 @@
     <!-- ros tf frame pub -->
     <node pkg="waltzing_robot" type="ros_frame_pub.py" name="ros_frame_pub" />
 
+    <!-- fake localisation -->
+    <!-- <node pkg="waltzing_robot" type="fake_localisation" name="fake_localisation" /> -->
+
     <node pkg="robot_state_publisher" name="robot_state_publisher" type="state_publisher" />
 </launch>
