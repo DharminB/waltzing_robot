@@ -1,4 +1,3 @@
-frame: 'odom'
 default_vel_curve: 'trapezoid'
 waypoints:
     - x: 2.0

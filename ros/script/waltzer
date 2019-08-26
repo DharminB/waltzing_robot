@@ -25,6 +25,7 @@ class Waltzer(object):
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
         max_vel = rospy.get_param('~max_vel', 8.0)
         max_acc = rospy.get_param('~max_acc', 8.0)
+        self.frame = rospy.get_param('~frame', 'odom')
 
         # class variables
         self.frame_id = waypoint_config.get('frame', 'odom')
@@ -50,45 +51,50 @@ class Waltzer(object):
 
     def follow_waypoints(self):
         """Follow waypoints defined by class variable with their vel curve motion
+
         :returns: None
 
         """
-        start_time = rospy.get_time()
-
-        # convert wp to local frame (removes need of robot to be at origin)
+        # convert wp to local frame
         start_pose = copy.deepcopy(self.current_position)
-        current = Waypoint({'x': start_pose[0],
-                            'y': start_pose[1],
-                            'theta': start_pose[2],
-                            'time':0.0})
         for wp in self.waypoints.waypoints:
-            # convert wp to local frame
             wp.x += start_pose[0]
             wp.y += start_pose[1]
             wp.theta += start_pose[2]
-        self._waypoints_pub.publish(self.waypoints.to_pose_array())
+        self._waypoints_pub.publish(self.waypoints.to_pose_array(self.frame))
 
+        # create dummy wp out of current position
+        x, y, theta = start_pose
+        current = Waypoint({'x': x, 'y': y, 'theta': theta, 'time':0.0})
+        waypoints = copy.deepcopy(self.waypoints.waypoints)
+        waypoints.insert(0, current)
+
+        # check if waypoint trajectory is possible
+        possible = self._vel_curve_handler.set_params(waypoints)
+        if not possible:
+            rospy.loginfo("Impossible trajectory encountered. Giving up.")
+            return
+
+        print(self._vel_curve_handler)
+
+        start_time = rospy.get_time()
+        last_wp_time = 0.0
         # iterate over all wp and execute trajectory
-        for wp in self.waypoints.waypoints:
-            possible = self._vel_curve_handler.set_delta(wp - current)
-            if not possible:
-                rospy.loginfo("Impossible trajectory encountered. Stopping motion")
-                break
-
-            # print(self._vel_curve_handler)
+        for self._vel_curve_handler.trajectory_index, wp in enumerate(self.waypoints.waypoints):
+            print(wp)
             while start_time + wp.time > rospy.get_time():
                 if rospy.is_shutdown():
                     self._cmd_vel_pub.publish(self._get_twist())
                     return
 
                 x, y, theta = self._vel_curve_handler.get_vel(
-                        rospy.get_time() - start_time - current.time,
+                        rospy.get_time() - start_time - last_wp_time,
                         current_position=self.current_position)
                 # print(x, y, theta)
                 self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
 
                 rospy.sleep(self.sleep_duration)
-            current = wp
+            last_wp_time = wp.time
         self._cmd_vel_pub.publish(self._get_twist())
 
     def visualise_trajectory(self):
@@ -105,7 +111,7 @@ class Waltzer(object):
         pose_array.header.stamp = rospy.Time.now()
         poses = []
         for wp in self.waypoints.waypoints:
-            possible = self._vel_curve_handler.set_delta(wp - current)
+            possible = self._vel_curve_handler.set_params(start_wp=current, end_wp=wp)
             if not possible:
                 rospy.loginfo("Impossible trajectory encountered. Stopping motion")
                 break
@@ -148,5 +154,5 @@ if __name__ == "__main__":
     rospy.init_node('waltzer')
     WALTZER = Waltzer()
     # WALTZER.waltz()
-    WALTZER.visualise_trajectory()
+    # WALTZER.visualise_trajectory()
     WALTZER.follow_waypoints()
