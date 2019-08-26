@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 
 import tf
+import rospy
 import math
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, TransformStamped, Quaternion
 
 class Utils(object):
 
@@ -22,10 +23,7 @@ class Utils(object):
         pose.position.y = y
 
         quat = tf.transformations.quaternion_from_euler(0.0, 0.0, theta)
-        pose.orientation.x = quat[0]
-        pose.orientation.y = quat[1]
-        pose.orientation.z = quat[2]
-        pose.orientation.w = quat[3]
+        pose.orientation = Quaternion(*quat)
         return pose
 
     @staticmethod
@@ -39,6 +37,29 @@ class Utils(object):
         quat = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
         theta = tf.transformations.euler_from_quaternion(quat)[2]
         return (pose.position.x, pose.position.y, theta)
+
+    @staticmethod
+    def get_static_transform_from_x_y_theta(x, y, theta, frame_id="odom"):
+        """Create a TransformedStamped message from x y and theta to 0, 0 and 0
+        
+        :x: float
+        :y: float
+        :theta: float
+        :returns: geometry_msgs.TransformStamped
+        """
+        transform = TransformStamped()
+  
+        transform.header.stamp = rospy.Time.now()
+        transform.header.frame_id = frame_id
+        transform.child_frame_id = "start_pose"
+  
+        transform.transform.translation.x = x
+        transform.transform.translation.y = y
+        transform.transform.translation.z = 0.0
+  
+        quat = tf.transformations.quaternion_from_euler(0.0, 0.0, theta)
+        transform.transform.rotation = Quaternion(*quat)
+        return transform
 
     @staticmethod
     def get_shortest_angle(angle1, angle2):

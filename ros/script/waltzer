@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import rospy
 import time
+import copy
 from geometry_msgs.msg import Twist, PoseArray
 from nav_msgs.msg import Odometry
 from waltzing_robot.waypoints import Waypoints, Waypoint
@@ -21,7 +22,7 @@ class Waltzer(object):
         waypoint_config = rospy.get_param('~waypoint_config', None)
         waypoints_topic = rospy.get_param('~waypoint_topic', '/ropod/waypoints')
         trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
-        sleep_duration = rospy.get_param('~sleep_duration', 0.1)
+        self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
 
         # class variables
         self.frame_id = waypoint_config.get('frame', 'odom')
@@ -29,7 +30,7 @@ class Waltzer(object):
             self.waypoints = Waypoints(waypoint_config=waypoint_config)
         else:
             self.waypoints = Waypoints()
-        self._vel_curve_handler = VelCurveHandler()
+        self._vel_curve_handler = VelCurveHandler(max_vel=8.0, max_acc=8.0)
         self.current_position = (0.0, 0.0, 0.0)
 
         # publishers
@@ -41,7 +42,6 @@ class Waltzer(object):
         self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
         
         time.sleep(1) # sleep to initialise publishers completely
-        self._waypoints_pub.publish(self.waypoints.to_pose_array())
 
     def _odom_cb(self, msg):
         self.current_position = Utils.get_x_y_theta_from_pose(msg.pose.pose)
@@ -52,22 +52,40 @@ class Waltzer(object):
 
         """
         start_time = rospy.get_time()
-        # Assumption: robot is initially at origin
-        current = Waypoint({'x': 0.0, 'y': 0.0, 'theta': 0.0, 'time':0.0})
+
+        # convert wp to local frame (removes need of robot to be at origin)
+        start_pose = copy.deepcopy(self.current_position)
+        current = Waypoint({'x': start_pose[0],
+                            'y': start_pose[1],
+                            'theta': start_pose[2],
+                            'time':0.0})
         for wp in self.waypoints.waypoints:
-            print(wp)
-            self._vel_curve_handler.set_delta(wp - current)
+            # convert wp to local frame
+            wp.x += start_pose[0]
+            wp.y += start_pose[1]
+            wp.theta += start_pose[2]
+        self._waypoints_pub.publish(self.waypoints.to_pose_array())
+
+        # iterate over all wp and execute trajectory
+        for wp in self.waypoints.waypoints:
+            possible = self._vel_curve_handler.set_delta(wp - current)
+            if not possible:
+                rospy.loginfo("Impossible trajectory encountered. Stopping motion")
+                break
+
             # print(self._vel_curve_handler)
             while start_time + wp.time > rospy.get_time():
                 if rospy.is_shutdown():
                     self._cmd_vel_pub.publish(self._get_twist())
                     return
+
                 x, y, theta = self._vel_curve_handler.get_vel(
                         rospy.get_time() - start_time - current.time,
-                        self.current_position)
+                        current_position=self.current_position)
                 # print(x, y, theta)
                 self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
-                rospy.sleep(0.1)
+
+                rospy.sleep(self.sleep_duration)
             current = wp
         self._cmd_vel_pub.publish(self._get_twist())
 
@@ -78,10 +96,8 @@ class Waltzer(object):
         """
         current = Waypoint({'x': 0.0, 'y': 0.0, 'theta': 0.0, 'time':0.0})
         current_time = 0.0
-        delta_time = 0.1
-        x = current.x
-        y = current.y
-        theta = current.theta
+        delta_time = self.sleep_duration
+        x, y, theta = self.current_position
         pose_array = PoseArray()
         pose_array.header.frame_id = self.frame_id
         pose_array.header.stamp = rospy.Time.now()
@@ -94,7 +110,7 @@ class Waltzer(object):
                 # in global frame
                 x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(
                         current_time - current.time,
-                        (0.0, 0.0, 0.0))
+                        current_position=(0.0, 0.0, 0.0))
                 x += x_vel*delta_time
                 y += y_vel*delta_time
                 theta += theta_vel*delta_time
@@ -107,7 +123,6 @@ class Waltzer(object):
             current = wp
         pose_array.poses = poses
         self._trajectory_pub.publish(pose_array)
-
 
     def waltz(self):
         """ Make the robot follow waltz type motion in a square

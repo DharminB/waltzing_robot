@@ -44,20 +44,59 @@ class VelCurveHandler(object):
         self.theta = delta_dict['theta']
         self.time = delta_dict['time']
         self.vel_curve = delta_dict['vel_curve']
-        assert self.vel_curve in self._vel_curve_func
-        self.get_vel = self._vel_curve_func[self.vel_curve]
+        if not (hasattr(self, self.vel_curve+"_vel") and callable(getattr(self, self.vel_curve+"_vel"))):
+            print("Invalid vel curve. Resetting to default")
+            self.vel_curve = "default"
+            return False
+        if hasattr(self, self.vel_curve+"_calc") and callable(getattr(self, self.vel_curve+"_calc")):
+            return getattr(self, self.vel_curve+"_calc")()
+        return False
+
+
+    def get_vel(self, time_duration, **kwargs):
+        return getattr(self, self.vel_curve+"_vel")(time_duration, **kwargs)
 
     def default_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
         return (0.0, 0.0, 0.0)
 
-    def square_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
-        if time_duration >= self.time:
-            self.get_vel = self._vel_curve_func['default']
-            return (0.0, 0.0, 0.0)
-        omega = Utils.get_shortest_angle(math.atan2(self.y, self.x), current_position[2])
-        vel = Utils.get_distance(self.x, self.y)/self.time
-        return (vel * math.cos(omega), vel * math.sin(omega), self.theta/self.time)
+    def linear_calc(self):
+        self.curve_specific_data['vel'] = Utils.get_distance(self.x, self.y)/self.time
+        return True
 
     def linear_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
-        return (0.0, 0.0, 0.0)
+        if time_duration >= self.time:
+            self.vel_curve = "default"
+            return (0.0, 0.0, 0.0)
+        omega = Utils.get_shortest_angle(math.atan2(self.y, self.x), current_position[2])
+        vel = self.curve_specific_data['vel']
+        return (vel * math.cos(omega), vel * math.sin(omega), self.theta/self.time)
 
+    def trapezoid_calc(self):
+        dist = Utils.get_distance(self.x, self.y)
+        des_vel_sol_1 = ((self.time * self.max_acc) + ((self.time * self.max_acc)**2 - (4 * self.max_acc * dist))**0.5)/2.0
+        des_vel_sol_2 = ((self.time * self.max_acc) - ((self.time * self.max_acc)**2 - (4 * self.max_acc * dist))**0.5)/2.0
+        if des_vel_sol_1 > self.max_vel:
+            self.curve_specific_data['vel'] = des_vel_sol_2
+        elif des_vel_sol_2 > self.max_vel:
+            self.curve_specific_data['vel'] = des_vel_sol_1
+        else:
+            print("No velocity solution found")
+            return False
+        self.curve_specific_data['acc_time'] = self.curve_specific_data['vel']/self.max_acc
+        self.curve_specific_data['const_vel_time'] = self.time - (2 * self.curve_specific_data['acc_time'])
+        # print(self.curve_specific_data)
+        return True
+
+    def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
+        if time_duration >= self.time:
+            self.vel_curve = "default"
+            return (0.0, 0.0, 0.0)
+        omega = Utils.get_shortest_angle(math.atan2(self.y, self.x), current_position[2])
+        vel = self.curve_specific_data['vel'] # desired vel
+        if time_duration < self.curve_specific_data['acc_time']:
+            # accelerate
+            vel = self.max_acc * time_duration
+        elif time_duration > self.time - self.curve_specific_data['acc_time']:
+            # decelerate
+            vel = - self.max_acc * (time_duration - self.time + self.curve_specific_data['acc_time'])
+        return (vel * math.cos(omega), vel * math.sin(omega), self.theta/self.time)
