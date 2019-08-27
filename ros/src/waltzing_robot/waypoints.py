@@ -41,6 +41,23 @@ class Waypoint(object):
         """
         return Utils.get_pose_from_x_y_theta(self.x, self.y, self.theta)
 
+    def shift(self, x_offset, y_offset, theta_offset):
+        """Shift the waypoint with the given offsets
+
+        :x_offset: float
+        :y_offset: float
+        :theta_offset: float
+        :returns None
+
+        """
+        self.x += x_offset
+        self.y += y_offset
+        self.theta += theta_offset
+        if self.control_points is not None:
+            for cp in self.control_points:
+                cp['x'] += x_offset
+                cp['y'] += y_offset
+
 
 class Waypoints(object):
     """

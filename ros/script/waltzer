@@ -58,9 +58,7 @@ class Waltzer(object):
         # convert wp to local frame
         start_pose = copy.deepcopy(self.current_position)
         for wp in self.waypoints.waypoints:
-            wp.x += start_pose[0]
-            wp.y += start_pose[1]
-            wp.theta += start_pose[2]
+            wp.shift(*start_pose)
         self._waypoints_pub.publish(self.waypoints.to_pose_array(self.frame))
 
         # create dummy wp out of current position
@@ -77,6 +75,7 @@ class Waltzer(object):
 
         print(self._vel_curve_handler)
 
+        self.visualise_trajectory()
         start_time = rospy.get_time()
         last_wp_time = 0.0
         # iterate over all wp and execute trajectory
@@ -102,25 +101,21 @@ class Waltzer(object):
         :returns: None
 
         """
-        current = Waypoint({'x': 0.0, 'y': 0.0, 'theta': 0.0, 'time':0.0})
-        current_time = 0.0
-        delta_time = self.sleep_duration
-        x, y, theta = self.current_position
         pose_array = PoseArray()
         pose_array.header.frame_id = self.frame_id
         pose_array.header.stamp = rospy.Time.now()
         poses = []
-        for wp in self.waypoints.waypoints:
-            possible = self._vel_curve_handler.set_params(start_wp=current, end_wp=wp)
-            if not possible:
-                rospy.loginfo("Impossible trajectory encountered. Stopping motion")
-                break
+        current_time = 0.0
+        delta_time = self.sleep_duration
+        x, y, theta = self.current_position
+        last_wp_time = 0.0
+        for self._vel_curve_handler.trajectory_index, wp in enumerate(self.waypoints.waypoints):
             while current_time < wp.time:
                 # current position has to be given (0,0,0) because the cmd_vel
                 # are applied in robot's frame whereas the poses are published
                 # in global frame
                 x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(
-                        current_time - current.time,
+                        current_time - last_wp_time,
                         current_position=(0.0, 0.0, 0.0))
                 x += x_vel*delta_time
                 y += y_vel*delta_time
@@ -128,10 +123,10 @@ class Waltzer(object):
                 pose = Utils.get_pose_from_x_y_theta(x, y, theta)
                 poses.append(pose)
                 current_time += delta_time
+            last_wp_time = wp.time
                 # time.sleep(delta_time)
                 # pose_array.poses = poses
                 # self._trajectory_pub.publish(pose_array)
-            current = wp
         pose_array.poses = poses
         self._trajectory_pub.publish(pose_array)
 

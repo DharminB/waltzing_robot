@@ -77,15 +77,32 @@ class VelCurveHandler(object):
             data['y'] = end_wp.y - start_wp.y
             data['vel'] = Utils.get_distance(data['x'], data['y'])/data['time']
         else:
-            return None
+            points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
+            points.insert(0, (start_wp.x, start_wp.y))
+            points.append((end_wp.x, end_wp.y))
+            curve_points = Utils.get_spline_curve(points)
+            data['curve_points'] = curve_points
+            dist = 0
+            for i in range(len(curve_points)-1):
+                dist += Utils.get_distance_between_points(curve_points[i], curve_points[i+1])
+            data['vel'] = dist / data['time']
         return data
 
     def linear_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
         data = self.trajectory_data_list[self.trajectory_index]
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
-        omega = Utils.get_shortest_angle(math.atan2(data['y'], data['x']),
-                                         current_position[2])
+        if 'curve_points' in data:
+            n = len(data['curve_points'])
+            time_offset = data['time'] / (n-1)
+            curve_point_index = int(math.floor(time_duration / time_offset))
+            x_diff = data['curve_points'][curve_point_index+1][0] - data['curve_points'][curve_point_index][0]
+            y_diff = data['curve_points'][curve_point_index+1][1] - data['curve_points'][curve_point_index][1]
+            omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
+                                             current_position[2])
+        else:
+            omega = Utils.get_shortest_angle(math.atan2(data['y'], data['x']),
+                                             current_position[2])
         return (data['vel'] * math.cos(omega),
                 data['vel'] * math.sin(omega),
                 data['theta']/data['time'])
