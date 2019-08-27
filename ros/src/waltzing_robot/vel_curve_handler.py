@@ -112,34 +112,50 @@ class VelCurveHandler(object):
         data['vel_curve'] = end_wp.vel_curve
         data['theta'] = Utils.get_shortest_angle(end_wp.theta, start_wp.theta)
         data['time'] = end_wp.time - start_wp.time
+        dist = 0
         if end_wp.control_points is None:
             data['x'] = end_wp.x - start_wp.x
             data['y'] = end_wp.y - start_wp.y
             dist = Utils.get_distance(data['x'], data['y'])
-            discriminant = (data['time'] * self.max_acc)**2 - (4 * self.max_acc * dist)
-            if discriminant < 0:
-                print("No velocity solution found")
-                return None
-            des_vel_sol_1 = ((data['time'] * self.max_acc) + (discriminant)**0.5)/2.0
-            des_vel_sol_2 = ((data['time'] * self.max_acc) - (discriminant)**0.5)/2.0
-            if des_vel_sol_1 <= self.max_vel:
-                data['vel'] = des_vel_sol_1
-            elif des_vel_sol_2 <= self.max_vel:
-                data['vel'] = des_vel_sol_2
-            else:
-                print("No valid velocity solution found. Found solutions: ", des_vel_sol_1, "and ", des_vel_sol_2)
-                return None
-            data['acc_time'] = data['vel']/self.max_acc
-            data['const_vel_time'] = data['time'] - (2 * data['acc_time'])
         else:
+            points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
+            points.insert(0, (start_wp.x, start_wp.y))
+            points.append((end_wp.x, end_wp.y))
+            curve_points = Utils.get_spline_curve(points)
+            data['curve_points'] = curve_points
+            for i in range(len(curve_points)-1):
+                dist += Utils.get_distance_between_points(curve_points[i], curve_points[i+1])
+        discriminant = (data['time'] * self.max_acc)**2 - (4 * self.max_acc * dist)
+        if discriminant < 0:
+            print("No velocity solution found")
             return None
+        des_vel_sol_1 = ((data['time'] * self.max_acc) + (discriminant)**0.5)/2.0
+        des_vel_sol_2 = ((data['time'] * self.max_acc) - (discriminant)**0.5)/2.0
+        if des_vel_sol_1 <= self.max_vel:
+            data['vel'] = des_vel_sol_1
+        elif des_vel_sol_2 <= self.max_vel:
+            data['vel'] = des_vel_sol_2
+        else:
+            print("No valid velocity solution found. Found solutions: ", des_vel_sol_1, "and ", des_vel_sol_2)
+            return None
+        data['acc_time'] = data['vel']/self.max_acc
+        data['const_vel_time'] = data['time'] - (2 * data['acc_time'])
         return data
 
     def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
         data = self.trajectory_data_list[self.trajectory_index]
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
-        omega = Utils.get_shortest_angle(math.atan2(data['y'], data['x']),
+        if 'curve_points' in data:
+            n = len(data['curve_points'])
+            time_offset = data['time'] / (n-1)
+            curve_point_index = int(math.floor(time_duration / time_offset))
+            x_diff = data['curve_points'][curve_point_index+1][0] - data['curve_points'][curve_point_index][0]
+            y_diff = data['curve_points'][curve_point_index+1][1] - data['curve_points'][curve_point_index][1]
+            omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
+                                             current_position[2])
+        else:
+            omega = Utils.get_shortest_angle(math.atan2(data['y'], data['x']),
                                          current_position[2])
         vel = data['vel'] # desired vel
         if time_duration < data['acc_time']: # accelerate
