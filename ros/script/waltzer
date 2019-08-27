@@ -74,8 +74,8 @@ class Waltzer(object):
             return
 
         print(self._vel_curve_handler)
-
         self.visualise_trajectory()
+
         start_time = rospy.get_time()
         last_wp_time = 0.0
         # iterate over all wp and execute trajectory
@@ -83,7 +83,7 @@ class Waltzer(object):
             print(wp)
             while start_time + wp.time > rospy.get_time():
                 if rospy.is_shutdown():
-                    self._cmd_vel_pub.publish(self._get_twist())
+                    self.publish_zero_vel()
                     return
 
                 x, y, theta = self._vel_curve_handler.get_vel(
@@ -94,7 +94,7 @@ class Waltzer(object):
 
                 rospy.sleep(self.sleep_duration)
             last_wp_time = wp.time
-        self._cmd_vel_pub.publish(self._get_twist())
+        self.publish_zero_vel()
 
     def visualise_trajectory(self):
         """Publish PoseArray representing the trajectory
@@ -145,9 +145,16 @@ class Waltzer(object):
         msg.angular.z = theta
         return msg
 
+    def publish_zero_vel(self):
+        self._cmd_vel_pub.publish(self._get_twist())
+
 if __name__ == "__main__":
     rospy.init_node('waltzer')
     WALTZER = Waltzer()
     # WALTZER.waltz()
     # WALTZER.visualise_trajectory()
-    WALTZER.follow_waypoints()
+    try:
+        WALTZER.follow_waypoints()
+    except Exception as e:
+        rospy.logerr(str(e))
+        WALTZER.publish_zero_vel()
