@@ -132,3 +132,12 @@ class Utils(object):
         for i in range(1, n+1):
             coef.append(int(coef[-1] * ((n + 1.0 - i)/i)))
         return coef
+
+    @staticmethod
+    def calc_heuristic_n_from_points(points):
+        dist = 0.0
+        for i in range(len(points)-1):
+            dist += Utils.get_distance_between_points(points[i], points[i+1])
+        print(dist)
+        return int(dist)*2
+        # return 5

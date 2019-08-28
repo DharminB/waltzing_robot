@@ -105,6 +105,8 @@ class Waltzer(object):
 
                 rospy.sleep(self.sleep_duration)
             last_wp_time = wp.time
+        end_time = rospy.get_time()
+        print(end_time - start_time)
         self.publish_zero_vel()
 
     def visualise_trajectory(self):
@@ -127,7 +129,8 @@ class Waltzer(object):
                 # in global frame
                 x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(
                         current_time - last_wp_time,
-                        current_position=(0.0, 0.0, 0.0))
+                        current_position=(x, y, theta))
+                        # current_position=(0.0, 0.0, 0.0))
                 x += x_vel*delta_time
                 y += y_vel*delta_time
                 theta += theta_vel*delta_time
