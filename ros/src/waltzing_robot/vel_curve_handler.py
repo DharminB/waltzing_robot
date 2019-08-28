@@ -80,22 +80,31 @@ class VelCurveHandler(object):
             points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
             points.insert(0, (start_wp.x, start_wp.y))
             points.append((end_wp.x, end_wp.y))
-            curve_points = Utils.get_spline_curve(points)
+            curve_points = Utils.get_spline_curve(points, n=15)
             data['curve_points'] = curve_points
-            dist = 0
+            distances = [0.0]
             for i in range(len(curve_points)-1):
-                dist += Utils.get_distance_between_points(curve_points[i], curve_points[i+1])
+                distances.append(distances[-1] +\
+                                 Utils.get_distance_between_points(curve_points[i],
+                                                                   curve_points[i+1]))
+            data['distances'] = distances
+            dist = distances[-1]
             data['vel'] = dist / data['time']
         return data
 
     def linear_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
+        # print(time_duration)
         data = self.trajectory_data_list[self.trajectory_index]
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
         if 'curve_points' in data:
-            n = len(data['curve_points'])
-            time_offset = data['time'] / (n-1)
-            curve_point_index = int(math.floor(time_duration / time_offset))
+            distance_travelled = data['vel'] * time_duration
+            # print(distance_travelled)
+            curve_point_index = 0
+            for i in range(len(data['distances'])):
+                if data['distances'][i] > distance_travelled:
+                    curve_point_index = i - 1
+                    break
             x_diff = data['curve_points'][curve_point_index+1][0] - data['curve_points'][curve_point_index][0]
             y_diff = data['curve_points'][curve_point_index+1][1] - data['curve_points'][curve_point_index][1]
             omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
@@ -121,10 +130,15 @@ class VelCurveHandler(object):
             points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
             points.insert(0, (start_wp.x, start_wp.y))
             points.append((end_wp.x, end_wp.y))
-            curve_points = Utils.get_spline_curve(points)
+            curve_points = Utils.get_spline_curve(points, n=15)
             data['curve_points'] = curve_points
+            distances = [0.0]
             for i in range(len(curve_points)-1):
-                dist += Utils.get_distance_between_points(curve_points[i], curve_points[i+1])
+                distances.append(distances[-1] +\
+                                 Utils.get_distance_between_points(curve_points[i],
+                                                                   curve_points[i+1]))
+            data['distances'] = distances
+            dist = distances[-1]
         discriminant = (data['time'] * self.max_acc)**2 - (4 * self.max_acc * dist)
         if discriminant < 0:
             print("No velocity solution found")
@@ -147,9 +161,13 @@ class VelCurveHandler(object):
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
         if 'curve_points' in data:
-            n = len(data['curve_points'])
-            time_offset = data['time'] / (n-1)
-            curve_point_index = int(math.floor(time_duration / time_offset))
+            distance_travelled = self.calc_distance_travelled_trapezoid(time_duration)
+            # print(distance_travelled)
+            curve_point_index = len(data['distances']) - 2
+            for i in range(len(data['distances'])):
+                if data['distances'][i] > distance_travelled:
+                    curve_point_index = i - 1
+                    break
             x_diff = data['curve_points'][curve_point_index+1][0] - data['curve_points'][curve_point_index][0]
             y_diff = data['curve_points'][curve_point_index+1][1] - data['curve_points'][curve_point_index][1]
             omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
@@ -165,3 +183,18 @@ class VelCurveHandler(object):
         return (vel * math.cos(omega),
                 vel * math.sin(omega),
                 data['theta']/data['time'])
+
+    def calc_distance_travelled_trapezoid(self, time_duration):
+        data = self.trajectory_data_list[self.trajectory_index]
+        dist = 0.0
+        if time_duration < data['acc_time']: # accelerate
+            dist = 0.5 * self.max_acc * (time_duration)**2
+        elif time_duration < data['time'] - data['acc_time']: # constant velocity
+            dist = (0.5 * self.max_acc * (data['acc_time'])**2) + \
+                   (data['vel'] * time_duration)
+        else: # decelerate
+            dist = (0.5 * self.max_acc * (data['acc_time'])**2) \
+                   + (data['vel'] * (data['time'] - data['acc_time'])) \
+                   - (0.5 * self.max_acc * (time_duration + data['acc_time'] -\
+                                            data['time'])**2)
+        return dist
