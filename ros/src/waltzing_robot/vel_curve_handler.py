@@ -97,7 +97,6 @@ class VelCurveHandler(object):
         return data
 
     def linear_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
-        # print(time_duration)
         data = self.trajectory_data_list[self.trajectory_index]
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)

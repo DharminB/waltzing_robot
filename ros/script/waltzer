@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import rospy
 import time
+import math
 import copy
 import traceback
 from geometry_msgs.msg import Twist, PoseArray, PolygonStamped, Point32
@@ -131,8 +132,8 @@ class Waltzer(object):
                         current_time - last_wp_time,
                         current_position=(x, y, theta))
                         # current_position=(0.0, 0.0, 0.0))
-                x += x_vel*delta_time
-                y += y_vel*delta_time
+                x += x_vel*math.cos(theta)*delta_time - y_vel*math.sin(theta)*delta_time
+                y += x_vel*math.sin(theta)*delta_time + y_vel*math.cos(theta)*delta_time
                 theta += theta_vel*delta_time
                 pose = Utils.get_pose_from_x_y_theta(x, y, theta)
                 poses.append(pose)
