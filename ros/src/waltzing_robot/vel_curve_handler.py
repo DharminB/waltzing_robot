@@ -150,7 +150,8 @@ class VelCurveHandler(object):
             points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
             points.insert(0, (start_wp.x, start_wp.y))
             points.append((end_wp.x, end_wp.y))
-            curve_points = Utils.get_spline_curve(points, n=15)
+            n = Utils.calc_heuristic_n_from_points(points)
+            curve_points = Utils.get_spline_curve(points, n=n)
             data['curve_points'] = curve_points
             distances = [0.0]
             for i in range(len(curve_points)-1):
@@ -174,6 +175,7 @@ class VelCurveHandler(object):
             return None
         data['acc_time'] = data['vel']/self.max_acc
         data['const_vel_time'] = data['time'] - (2 * data['acc_time'])
+        data['curve_point_index'] = 1
         return data
 
     def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
@@ -181,21 +183,34 @@ class VelCurveHandler(object):
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
         if 'curve_points' in data:
-            distance_travelled = self.calc_distance_travelled_trapezoid(time_duration)
-            # print(distance_travelled)
-            curve_point_index = len(data['distances']) - 2
-            for i in range(len(data['distances'])):
-                if data['distances'][i] > distance_travelled:
-                    curve_point_index = i - 1
-                    break
-            x_diff = data['curve_points'][curve_point_index+1][0] - data['curve_points'][curve_point_index][0]
-            y_diff = data['curve_points'][curve_point_index+1][1] - data['curve_points'][curve_point_index][1]
+            dist_to_cp = Utils.get_distance_between_points(
+                    current_position[:2],
+                    data['curve_points'][data['curve_point_index']])
+            total_remaining_distance = dist_to_cp + data['distances'][-1] -\
+                                       data['distances'][data['curve_point_index']]
+            if dist_to_cp < self.curve_point_distance_tolerance:
+                data['curve_point_index'] += 1
+                if data['curve_point_index'] == len(data['curve_points']):
+                    data['curve_point_index'] = 1
+                    return self.default_vel(time_duration, current_position)
+
+            curve_point_index = data['curve_point_index']
+            x_diff = data['curve_points'][curve_point_index][0] - current_position[0]
+            y_diff = data['curve_points'][curve_point_index][1] - current_position[1]
             omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
                                              current_position[2])
         else:
             omega = Utils.get_shortest_angle(math.atan2(data['y'], data['x']),
                                          current_position[2])
-        vel = data['vel'] # desired vel
+        total_remaining_time = data['time'] - time_duration
+        req_vel = total_remaining_distance / total_remaining_time
+        # print(data['vel'], req_vel)
+        vel = data['vel']
+        if abs(req_vel - data['vel']) <= self.max_acc:
+            vel = req_vel
+        else:
+            sign = 1 if req_vel > data['vel'] else -1
+            vel = data['vel'] + (sign * self.max_acc)
         if time_duration < data['acc_time']: # accelerate
             vel = self.max_acc * time_duration
         elif time_duration > data['time'] - data['acc_time']: # decelerate
@@ -203,18 +218,3 @@ class VelCurveHandler(object):
         return (vel * math.cos(omega),
                 vel * math.sin(omega),
                 data['theta']/data['time'])
-
-    def calc_distance_travelled_trapezoid(self, time_duration):
-        data = self.trajectory_data_list[self.trajectory_index]
-        dist = 0.0
-        if time_duration < data['acc_time']: # accelerate
-            dist = 0.5 * self.max_acc * (time_duration)**2
-        elif time_duration < data['time'] - data['acc_time']: # constant velocity
-            dist = (0.5 * self.max_acc * (data['acc_time'])**2) + \
-                   (data['vel'] * time_duration)
-        else: # decelerate
-            dist = (0.5 * self.max_acc * (data['acc_time'])**2) \
-                   + (data['vel'] * (data['time'] - data['acc_time'])) \
-                   - (0.5 * self.max_acc * (time_duration + data['acc_time'] -\
-                                            data['time'])**2)
-        return dist
