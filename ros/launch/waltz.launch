@@ -21,7 +21,8 @@
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/spline.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/line_trapezoid.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/square_trapezoid.yaml" /> -->
-        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/spline_trapezoid.yaml" />
+        <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/spline_trapezoid.yaml" /> -->
+        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid.yaml" />
 
     </node>
 </launch>
