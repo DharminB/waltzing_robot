@@ -2,10 +2,12 @@
 <launch>
     <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
 
-        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
+        <!-- <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" /> -->
+        <param name="cmd_vel_topic" type="str" value="/cmd_vel" />
         <param name="waypoints_topic" type="str" value="/ropod/waypoints" />
         <!-- <param name="localisation_topic" type="str" value="/fake_localisation" /> -->
-        <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
+        <!-- <param name="odom_topic" type="str" value="/ropod/odom_incomplete" /> -->
+        <param name="odom_topic" type="str" value="/odom" />
         <param name="frame" type="str" value="odom" />
 
         <param name="sleep_duration" type="double" value="0.1" />
@@ -22,7 +24,8 @@
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/line_trapezoid.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/square_trapezoid.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/spline_trapezoid.yaml" /> -->
-        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid.yaml" />
+        <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid.yaml" /> -->
+        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid_small.yaml" />
 
     </node>
 </launch>

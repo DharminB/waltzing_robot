@@ -138,6 +138,4 @@ class Utils(object):
         dist = 0.0
         for i in range(len(points)-1):
             dist += Utils.get_distance_between_points(points[i], points[i+1])
-        print(dist)
-        return int(dist)*2
-        # return 5
+        return max(int(dist)*2, 10)

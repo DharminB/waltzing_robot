@@ -22,7 +22,7 @@ class Waltzer(object):
         cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
         odom_topic = rospy.get_param('~odom_topic', '/ropod/odom_incomplete')
         waypoint_config = rospy.get_param('~waypoint_config', None)
-        waypoints_topic = rospy.get_param('~waypoint_topic', '/ropod/waypoints')
+        waypoints_topic = rospy.get_param('~waypoints_topic', '/ropod/waypoints')
         trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
         max_vel = rospy.get_param('~max_vel', 8.0)

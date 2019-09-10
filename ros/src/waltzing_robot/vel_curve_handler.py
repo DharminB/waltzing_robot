@@ -143,9 +143,10 @@ class VelCurveHandler(object):
         data['time'] = end_wp.time - start_wp.time
         dist = 0
         if end_wp.control_points is None:
-            data['x'] = end_wp.x - start_wp.x
-            data['y'] = end_wp.y - start_wp.y
-            dist = Utils.get_distance(data['x'], data['y'])
+            data['delta_x'] = end_wp.x - start_wp.x
+            data['delta_y'] = end_wp.y - start_wp.y
+            data['end_wp'] = (end_wp.x, end_wp.y, end_wp.theta)
+            data['vel'] = Utils.get_distance(data['delta_x'], data['delta_y'])/data['time']
         else:
             points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
             points.insert(0, (start_wp.x, start_wp.y))
@@ -200,8 +201,11 @@ class VelCurveHandler(object):
             omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
                                              current_position[2])
         else:
-            omega = Utils.get_shortest_angle(math.atan2(data['y'], data['x']),
-                                         current_position[2])
+            omega = Utils.get_shortest_angle(math.atan2(data['delta_y'], data['delta_x']),
+                                             current_position[2])
+            total_remaining_distance = Utils.get_distance_between_points(
+                    current_position[:2],
+                    data['end_wp'][:2])
         total_remaining_time = data['time'] - time_duration
         req_vel = total_remaining_distance / total_remaining_time
         # print(data['vel'], req_vel)
