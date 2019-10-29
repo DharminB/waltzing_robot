@@ -11,6 +11,7 @@ from geometry_msgs.msg import Twist, PoseArray, PolygonStamped, Point32
 from nav_msgs.msg import Odometry
 from waltzing_robot.waypoints import Waypoints, Waypoint
 from waltzing_robot.vel_curve_handler import VelCurveHandler
+from waltzing_robot.music_player import MusicPlayer
 from waltzing_robot.utils import Utils
 
 class Waltzer(object):
@@ -27,15 +28,21 @@ class Waltzer(object):
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
         max_vel = rospy.get_param('~max_vel', 8.0)
         max_acc = rospy.get_param('~max_acc', 8.0)
+        allow_unsafe_transition = rospy.get_param('~allow_unsafe_transition', True)
         self.frame = rospy.get_param('~frame', 'odom')
+        music_file_name = rospy.get_param('~music_file_name', None)
+        self.music_player = MusicPlayer(music_file_name)
 
         # class variables
-        self.frame_id = waypoint_config.get('frame', 'odom')
+        self.frame_id = waypoint_config.get('frame', self.frame)
+        print(self.frame_id)
         if waypoint_config is not None:
             self.waypoints = Waypoints(waypoint_config=waypoint_config)
         else:
             self.waypoints = Waypoints()
-        self._vel_curve_handler = VelCurveHandler(max_vel=max_vel, max_acc=max_acc)
+        self._vel_curve_handler = VelCurveHandler(max_vel=max_vel,
+                                                  max_acc=max_acc,
+                                                  allow_unsafe_transition=allow_unsafe_transition)
         self.current_position = (0.0, 0.0, 0.0)
 
         # publishers
@@ -76,7 +83,6 @@ class Waltzer(object):
             rospy.logwarn("Impossible trajectory encountered. Giving up.")
             return
 
-        print(self._vel_curve_handler)
         if 'curve_points' in self._vel_curve_handler.trajectory_data_list[0]:
             polygon_msg = PolygonStamped()
             polygon_msg.header.stamp = rospy.Time.now()
@@ -90,6 +96,7 @@ class Waltzer(object):
         self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
         # return
+        self.music_player.start_playing()
         start_time = rospy.get_time()
         last_wp_time = 0.0
         # iterate over all wp and execute trajectory
@@ -111,6 +118,7 @@ class Waltzer(object):
         end_time = rospy.get_time()
         print(end_time - start_time)
         self.publish_zero_vel()
+        self.music_player.start_playing()
 
     def visualise_trajectory(self, waypoints):
         """Publish PoseArray representing the trajectory

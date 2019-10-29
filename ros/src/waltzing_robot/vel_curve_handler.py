@@ -22,12 +22,14 @@ class VelCurveHandler(object):
         self.curve_point_distance_tolerance = 0.05
         self.trajectory_data_list = list()
         self.trajectory_index = 0
-        self.allow_unsafe_transition = False
+        self.allow_unsafe_transition = kwargs.get('allow_unsafe_transition', True)
+        tos_radius = kwargs.get('turn_on_spot_radius', 0.1) # turn on spot radius
+        self.tos_time = kwargs.get('turn_on_spot_time', 1.5)
         self.turn_on_spot_wp = Waypoint(
             waypoint_dict={
                 'x': 0.0, 'y':0.0, 'theta':0.0, 'time': 1.0,
-                'control_points': [{'x': 0.05, 'y': 0.0}, {'x': 0.1, 'y': -0.1},
-                                   {'x': 0.1, 'y': 0.1}, {'x': 0.05, 'y': 0.0}]},
+                'control_points': [{'x': tos_radius, 'y': 0.0}, {'x': 2*tos_radius, 'y': -2*tos_radius},
+                                   {'x': 2*tos_radius, 'y': 2*tos_radius}, {'x': tos_radius, 'y': 0.0}]},
             default_vel_curve='trapezoid')
 
     def __str__(self):
@@ -129,7 +131,7 @@ class VelCurveHandler(object):
         intermediate_wp.shift(middle_wp.x, middle_wp.y, dir_bw_start_middle)
         intermediate_wp.time = middle_wp.time
         intermediate_wp.theta = middle_wp.theta
-        middle_wp.time -= 1
+        middle_wp.time -= self.tos_time
         return intermediate_wp
 
     def get_vel(self, time_duration, **kwargs):
