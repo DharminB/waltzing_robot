@@ -12,7 +12,7 @@ class Waypoint(object):
 
     """Class representing a single waypoint"""
 
-    def __init__(self, waypoint_dict=None, default_vel_curve='square'):
+    def __init__(self, waypoint_dict=None, default_vel_curve='trapezoid'):
         if waypoint_dict is not None:
             self.x = waypoint_dict.get('x', None)
             self.y = waypoint_dict.get('y', None)
@@ -84,12 +84,13 @@ class Waypoints(object):
             self.default_vel_curve = waypoint_config.get('default_vel_curve', 'linear')
             waypoints = waypoint_config.get('waypoints', [])
         else:
-            self.default_vel_curve = kwargs.get('default_vel_curve', 'linear')
+            self.default_vel_curve = kwargs.get('default_vel_curve', 'trapezoid')
             waypoints = kwargs.get('waypoints', [])
         self.waypoints = [Waypoint(wp_dict, self.default_vel_curve) for wp_dict in waypoints]
 
     def __str__(self):
         string = ''
+        string += 'default_vel_curve: ' + str(self.default_vel_curve) + '\n'
         string += 'waypoints:' + '\n'
         for wp in self.waypoints:
             string += '  - ' + str(wp).replace('\n', '\n    ')[:-4]

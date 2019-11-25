@@ -1,0 +1,135 @@
+#! /usr/bin/env python
+
+from __future__ import print_function
+
+import copy
+import rospy
+from geometry_msgs.msg import Point, PoseStamped, PoseArray, PolygonStamped, Point32
+from visualization_msgs.msg import MarkerArray, Marker
+from waltzing_robot.waypoints import Waypoints, Waypoint
+from waltzing_robot.vel_curve_handler import VelCurveHandler
+from waltzing_robot.music_player import MusicPlayer
+from waltzing_robot.utils import Utils
+from waltzing_robot.gui import MainApplication
+
+class GuiEditor(object):
+
+    """Editor for waypoints files"""
+
+    def __init__(self):
+        # read ros param
+        # cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
+        # odom_topic = rospy.get_param('~odom_topic', '/ropod/odom_incomplete')
+        # waypoint_config = rospy.get_param('~waypoint_config', None)
+        # waypoints_topic = rospy.get_param('~waypoints_topic', '/ropod/waypoints')
+        # trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
+        # self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
+        # max_vel = rospy.get_param('~max_vel', 8.0)
+        # max_acc = rospy.get_param('~max_acc', 8.0)
+        # allow_unsafe_transition = rospy.get_param('~allow_unsafe_transition', True)
+        # self.frame = rospy.get_param('~frame', 'odom')
+        # music_file_name = rospy.get_param('~music_file_name', None)
+        # self.music_player = MusicPlayer(music_file_name)
+
+        # # class variables
+        self.frame = rospy.get_param('frame', 'world')
+        print(self.frame)
+        # if waypoint_config is not None:
+        #     self.waypoints = Waypoints(waypoint_config=waypoint_config)
+        # else:
+        #     self.waypoints = Waypoints()
+        # self._vel_curve_handler = VelCurveHandler(max_vel=max_vel,
+        #                                           max_acc=max_acc,
+        #                                           allow_unsafe_transition=allow_unsafe_transition)
+        # self.current_position = (0.0, 0.0, 0.0)
+
+        # # publishers
+        # self._cmd_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=1)
+        # self._waypoints_pub = rospy.Publisher('/waypoints', PoseArray, queue_size=1)
+        self._waypoints_pub = rospy.Publisher('/waypoints_marker', MarkerArray, queue_size=1)
+        # self._trajectory_pub = rospy.Publisher(trajectory_topic, PoseArray, queue_size=1)
+        # self._spline_curve_pub = rospy.Publisher('~spline_curve', PolygonStamped, queue_size=1)
+
+        # subscribers
+        self.nav_goal_sub = rospy.Subscriber('/move_base_simple/goal',
+                                             PoseStamped,
+                                             self.nav_goal_cb)
+        
+        rospy.sleep(1) # sleep to initialise publishers completely
+        # self.gui_app = MainApplication()
+        # self.gui_app.root.mainloop()
+        self.waypoints = Waypoints()
+        self._pub_marker_based_on_waypoints()
+
+    def nav_goal_cb(self, msg):
+        """Callback for rviz's nav goal messages
+
+        :msg: geometry_msgs.PoseStamped
+        :returns: None
+
+        """
+        x, y, theta = Utils.get_x_y_theta_from_pose(msg.pose)
+        wp_dict = {'x': x, 'y': y, 'theta': theta, 'time': 2.0, 'control_points':[{'x':1.0, 'y':1.0}]}
+        wp = Waypoint(waypoint_dict=wp_dict, default_vel_curve='trapezoid')
+        self.waypoints.waypoints.append(wp)
+        self._pub_marker_based_on_waypoints()
+        # self._waypoints_pub.publish(self.waypoints.to_pose_array(self.frame))
+
+    def _pub_marker_based_on_waypoints(self):
+        """Convert Waypoints object to MarkerArray and publish it for visualisation
+        :returns: None
+
+        """
+        waypoints = copy.deepcopy(self.waypoints)
+        waypoints.waypoints.insert(0, Waypoint(waypoint_dict={'x': 0.0, 'y': 0.0, 'theta': 0.0, 'time': 0.0},
+                                            default_vel_curve='trapezoid'))
+        marker_array = MarkerArray()
+        for i, wp in enumerate(waypoints.waypoints):
+            marker = Marker(pose=wp.to_pose(), type=Marker.ARROW, id=i)
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = self.frame
+            marker.scale.x = 0.5
+            marker.scale.y = marker.scale.z = 0.1
+            marker.color.r = 1.0
+            if i == len(waypoints.waypoints)-1:
+                marker.color.a = 1.0
+            else:
+                marker.color.a = 0.6
+            marker_array.markers.append(marker)
+        for i in range(1, len(waypoints.waypoints)):
+            start_wp = waypoints.waypoints[i-1]
+            end_wp = waypoints.waypoints[i]
+            if end_wp.control_points is None:
+                marker = Marker(type=Marker.LINE_STRIP, id=10000+i)
+                end_wp_pose = waypoints.waypoints[i].to_pose()
+                start_wp_pose = waypoints.waypoints[i-1].to_pose()
+                marker.points.append(start_wp_pose.position)
+                marker.points.append(end_wp_pose.position)
+            else:
+                marker = Marker(type=Marker.LINE_LIST, id=10000+i)
+                points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
+                points.insert(0, (start_wp.x, start_wp.y))
+                points.append((end_wp.x, end_wp.y))
+                n = Utils.calc_heuristic_n_from_points(points)
+                curve_points = Utils.get_spline_curve(points, n=n)
+                curve_ros_points = [Point(x=p[0], y=p[1], z=0.0) for p in curve_points]
+                for j, p in enumerate(curve_ros_points):
+                    marker.points.append(p)
+                    if j == 0 or j == len(curve_ros_points)-1:
+                        continue
+                    marker.points.append(copy.deepcopy(p))
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = self.frame
+            marker.color.g = marker.color.a = 1.0
+            if i == len(waypoints.waypoints)-1:
+                marker.scale.x = 0.02
+            else:
+                marker.scale.x = 0.01
+            marker_array.markers.append(marker)
+        rospy.loginfo(marker_array)
+        self._waypoints_pub.publish(marker_array)
+
+if __name__ == "__main__":
+    rospy.init_node('gui_editor')
+    GE = GuiEditor()
+    rospy.spin()
