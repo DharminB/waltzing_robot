@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Waypoints1
         - /MarkerArray1
+        - /InteractiveMarkers1
       Splitter Ratio: 0.51901567
     Tree Height: 602
   - Class: rviz/Selection
@@ -105,6 +106,15 @@ Visualization Manager:
       Namespaces:
         "": true
       Queue Size: 100
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /simple_marker/update
       Value: true
   Enabled: true
   Global Options:

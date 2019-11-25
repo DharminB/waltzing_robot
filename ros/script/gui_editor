@@ -126,7 +126,6 @@ class GuiEditor(object):
             else:
                 marker.scale.x = 0.01
             marker_array.markers.append(marker)
-        rospy.loginfo(marker_array)
         self._waypoints_pub.publish(marker_array)
 
 if __name__ == "__main__":
