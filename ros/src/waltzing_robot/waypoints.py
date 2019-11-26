@@ -5,7 +5,9 @@ from __future__ import print_function
 import math
 import tf
 import rospy
-from geometry_msgs.msg import PoseArray, Pose
+import copy
+from geometry_msgs.msg import PoseArray, Pose, Point
+from visualization_msgs.msg import MarkerArray, Marker
 from waltzing_robot.utils import Utils
 
 class Waypoint(object):
@@ -109,3 +111,60 @@ class Waypoints(object):
         pose_array.poses = [wp.to_pose() for wp in self.waypoints]
         return pose_array
 
+    def to_marker_array(self, frame):
+        """Return a MarkerArray object representing the trajectory formed by waypoints
+
+        :frame: string
+        :returns: visualization_msgs.MarkerArray
+
+        """
+        waypoints = copy.deepcopy(self)
+        waypoints.waypoints.insert(0, Waypoint(waypoint_dict={'x': 0.0,
+                                                              'y': 0.0,
+                                                              'theta': 0.0,
+                                                              'time': 0.0},
+                                               default_vel_curve=self.default_vel_curve))
+        marker_array = MarkerArray()
+        for i, wp in enumerate(waypoints.waypoints):
+            marker = Marker(pose=wp.to_pose(), type=Marker.ARROW, id=i)
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = frame
+            marker.scale.x = 0.5
+            marker.scale.y = marker.scale.z = 0.1
+            marker.color.r = 1.0
+            if i == len(waypoints.waypoints)-1:
+                marker.color.a = 1.0
+            else:
+                marker.color.a = 0.6
+            marker_array.markers.append(marker)
+        for i in range(1, len(waypoints.waypoints)):
+            start_wp = waypoints.waypoints[i-1]
+            end_wp = waypoints.waypoints[i]
+            if end_wp.control_points is None:
+                marker = Marker(type=Marker.LINE_STRIP, id=10000+i)
+                end_wp_pose = waypoints.waypoints[i].to_pose()
+                start_wp_pose = waypoints.waypoints[i-1].to_pose()
+                marker.points.append(start_wp_pose.position)
+                marker.points.append(end_wp_pose.position)
+            else:
+                marker = Marker(type=Marker.LINE_LIST, id=10000+i)
+                points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
+                points.insert(0, (start_wp.x, start_wp.y))
+                points.append((end_wp.x, end_wp.y))
+                n = Utils.calc_heuristic_n_from_points(points)
+                curve_points = Utils.get_spline_curve(points, n=n)
+                curve_ros_points = [Point(x=p[0], y=p[1], z=0.0) for p in curve_points]
+                for j, p in enumerate(curve_ros_points):
+                    marker.points.append(p)
+                    if j == 0 or j == len(curve_ros_points)-1:
+                        continue
+                    marker.points.append(copy.deepcopy(p))
+            marker.header.stamp = rospy.Time.now()
+            marker.header.frame_id = frame
+            marker.color.g = marker.color.a = 1.0
+            if i == len(waypoints.waypoints)-1:
+                marker.scale.x = 0.02
+            else:
+                marker.scale.x = 0.01
+            marker_array.markers.append(marker)
+        return marker_array
