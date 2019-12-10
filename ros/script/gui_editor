@@ -5,13 +5,21 @@ from __future__ import print_function
 import copy
 import rospy
 import rosnode
-from geometry_msgs.msg import Point, PoseStamped, PoseArray, PolygonStamped, Point32
-from visualization_msgs.msg import MarkerArray, Marker
+import tkinter as tk
+
+from geometry_msgs.msg import Point, PoseStamped, PointStamped
+from visualization_msgs.msg import MarkerArray, Marker, InteractiveMarker, InteractiveMarkerControl
+
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer, InteractiveMarkerFeedback
 from waltzing_robot.waypoints import Waypoints, Waypoint
-from waltzing_robot.vel_curve_handler import VelCurveHandler
 from waltzing_robot.music_player import MusicPlayer
 from waltzing_robot.utils import Utils
-from waltzing_robot.gui import MainApplication
+# from waltzing_robot.gui import MainApplication
+
+BGCOLOR='#edead9'
+FGCOLOR='#000000'
+CANVAS_BG='#303030'
+CANVAS_GRID='#525252'
 
 class GuiEditor(object):
 
@@ -19,22 +27,32 @@ class GuiEditor(object):
 
     def __init__(self):
         # read ros param
+        self.frame = rospy.get_param('frame', 'world')
         # music_file_name = rospy.get_param('~music_file_name', None)
         # self.music_player = MusicPlayer(music_file_name)
 
         # class variables
-        self.frame = rospy.get_param('frame', 'world')
+        self.marker_id_counter = 0
 
         # publishers
         self._waypoints_pub = rospy.Publisher('/waypoints_marker', MarkerArray, queue_size=1)
 
         # subscribers
-        self.nav_goal_sub = rospy.Subscriber('/move_base_simple/goal',
+        self._nav_goal_sub = rospy.Subscriber('/move_base_simple/goal',
                                              PoseStamped,
                                              self._nav_goal_cb)
-        
+
+        self._clicked_point_sub = rospy.Subscriber('/clicked_point',
+                                                   PointStamped,
+                                                   self._clicked_point_cb)
+
+        # servers
+        self.interactive_marker_server = InteractiveMarkerServer("two_dof_marker")
+
+
         rospy.sleep(1) # sleep to initialise publishers completely
-        self.gui_app = MainApplication()
+        # self.gui_app = MainApplication()
+        self._gui_init()
         self.waypoints = Waypoints()
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
 
@@ -45,17 +63,35 @@ class GuiEditor(object):
         """
         while not rospy.is_shutdown():
             try:
-                self.gui_app.root.update()
+                # self.gui_app.root.update()
+                self.root.update()
             except Exception as e:
                 rospy.logerr(str(e))
                 break
+
+    def _gui_init(self):
+        self.root = tk.Tk()
+        self.root.title('Waltzing robot')
+        self.root.configure(bg=BGCOLOR)
+        self.root.configure(height=600)
+        self.root.configure(width=800)
+        self.root.resizable(width=False, height=False)
+        self.status = tk.Label(self.root, text="x: 0, y: 0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status.configure(bg=BGCOLOR, fg=FGCOLOR)
+        # self.canvas = GuiCanvas(self.root)
+        self.test_button = tk.Button(self.root, text='test', command=self.test_button_cb)
+        self.test_button.configure(bg=BGCOLOR, fg=FGCOLOR)
+        self.test_button.pack(side=tk.RIGHT)
+
+    def test_button_cb(self):
+        print("button pressed")
 
     def cleanup(self):
         """Kill neccessary rosnodes/processes to exit successfully
         :returns: None
 
         """
-        pass
         gui_exists = False
         try:
             gui_exists = 1 == self.gui_app.root.winfo_exists()
@@ -73,6 +109,38 @@ class GuiEditor(object):
             if rviz_node is not None:
                 rosnode.kill_nodes([rviz_node])
         rospy.loginfo("Exiting.")
+
+    def _clicked_point_cb(self, msg):
+        """Callback for clicked point. Ignores the message if there is no end waypoint
+        Otherwise, adds a interactive marker at the position.
+
+        :msg: geometry_msgs.PointStamped
+        :returns: None
+
+        """
+        if len(self.waypoints.waypoints) == 0:
+            rospy.logerr('No waypoints selected. Please add a waypoint first')
+            return
+        self.marker_id_counter += 1
+        marker = Utils.get_2_dof_interactive_marker('cp_'+str(self.marker_id_counter),
+                                                    self.frame,
+                                                    msg.point.x,
+                                                    msg.point.y)
+        print(marker)
+        self.interactive_marker_server.insert(marker, self.interactive_marker_cb)
+        self.interactive_marker_server.applyChanges()
+
+    def interactive_marker_cb(self, feedback):
+        """TODO: Docstring for interactive_marker_cb.
+
+        :feedback: InteractiveMarkerFeedback
+        :returns: None
+
+        """
+        if not feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
+            return
+        p = feedback.pose.position
+        print(feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z))
 
     def _nav_goal_cb(self, msg):
         """Callback for rviz's nav goal messages
