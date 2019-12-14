@@ -6,7 +6,8 @@ import math
 import tf
 import rospy
 import copy
-from geometry_msgs.msg import PoseArray, Pose, Point
+from std_msgs.msg import ColorRGBA
+from geometry_msgs.msg import PoseArray, Pose, Point, Vector3
 from visualization_msgs.msg import MarkerArray, Marker
 from waltzing_robot.utils import Utils
 
@@ -129,14 +130,25 @@ class Waypoints(object):
             marker = Marker(pose=wp.to_pose(), type=Marker.ARROW, id=i)
             marker.header.stamp = rospy.Time.now()
             marker.header.frame_id = frame
-            marker.scale.x = 0.5
-            marker.scale.y = marker.scale.z = 0.1
-            marker.color.r = 1.0
+            marker.scale = Vector3(0.5, 0.1, 0.1)
+            marker.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
             if i == len(waypoints.waypoints)-1:
-                marker.color.a = 1.0
+                marker.color.a = 0.9
             else:
-                marker.color.a = 0.6
+                marker.color.a = 0.5
             marker_array.markers.append(marker)
+
+            marker_msg_text = Marker(type=Marker.TEXT_VIEW_FACING,
+                                     id=20000+i,
+                                     text="t=" + str(wp.time),
+                                     scale=Vector3(0.0, 0.0, 0.15),
+                                     color=ColorRGBA(1., 1., 1., 1.))
+            marker_msg_text.pose = wp.to_pose()
+            # marker_msg_text.pose.position.y += 0.1
+            marker_msg_text.header.stamp = rospy.Time.now()
+            marker_msg_text.header.frame_id = frame
+            marker_array.markers.append(marker_msg_text)
+
         for i in range(1, len(waypoints.waypoints)):
             start_wp = waypoints.waypoints[i-1]
             end_wp = waypoints.waypoints[i]

@@ -6,6 +6,7 @@ import copy
 import rospy
 import rosnode
 import tkinter as tk
+import tkSimpleDialog as simpledialog
 
 from geometry_msgs.msg import Point, PoseStamped, PointStamped
 from visualization_msgs.msg import MarkerArray, Marker, InteractiveMarker, InteractiveMarkerControl
@@ -18,8 +19,6 @@ from waltzing_robot.utils import Utils
 
 BGCOLOR='#edead9'
 FGCOLOR='#000000'
-CANVAS_BG='#303030'
-CANVAS_GRID='#525252'
 
 class GuiEditor(object):
 
@@ -61,31 +60,14 @@ class GuiEditor(object):
         :returns: None
 
         """
-        while not rospy.is_shutdown():
-            try:
-                # self.gui_app.root.update()
-                self.root.update()
-            except Exception as e:
-                rospy.logerr(str(e))
-                break
-
-    def _gui_init(self):
-        self.root = tk.Tk()
-        self.root.title('Waltzing robot')
-        self.root.configure(bg=BGCOLOR)
-        self.root.configure(height=600)
-        self.root.configure(width=800)
-        self.root.resizable(width=False, height=False)
-        self.status = tk.Label(self.root, text="x: 0, y: 0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
-        self.status.pack(side=tk.BOTTOM, fill=tk.X)
-        self.status.configure(bg=BGCOLOR, fg=FGCOLOR)
-        # self.canvas = GuiCanvas(self.root)
-        self.test_button = tk.Button(self.root, text='test', command=self.test_button_cb)
-        self.test_button.configure(bg=BGCOLOR, fg=FGCOLOR)
-        self.test_button.pack(side=tk.RIGHT)
-
-    def test_button_cb(self):
-        print("button pressed")
+        self.root.mainloop()
+        # while not rospy.is_shutdown():
+        #     try:
+        #         # self.gui_app.root.update()
+        #         self.root.update()
+        #     except Exception as e:
+        #         rospy.logerr(str(e))
+        #         break
 
     def cleanup(self):
         """Kill neccessary rosnodes/processes to exit successfully
@@ -110,6 +92,48 @@ class GuiEditor(object):
                 rosnode.kill_nodes([rviz_node])
         rospy.loginfo("Exiting.")
 
+    def _gui_init(self):
+        self.root = tk.Tk()
+        self.root.title('Waltzing robot')
+        self.root.configure(bg=BGCOLOR)
+        self.root.configure(height=600)
+        self.root.configure(width=800)
+        self.root.resizable(width=False, height=False)
+        self.status = tk.Label(self.root, text="x: 0, y: 0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status.configure(bg=BGCOLOR, fg=FGCOLOR)
+        # self.canvas = GuiCanvas(self.root)
+        self.test_button = tk.Button(self.root, text='test', command=self.test_button_cb)
+        self.test_button.configure(bg=BGCOLOR, fg=FGCOLOR)
+        self.test_button.pack(side=tk.RIGHT)
+        self.add_cp_button = tk.Button(self.root, text='Add control point', command=self.add_cp_cb)
+        self.add_cp_button.configure(bg=BGCOLOR, fg=FGCOLOR)
+        self.add_cp_button.pack(side=tk.RIGHT)
+
+    def test_button_cb(self):
+        print("button pressed")
+
+    def add_cp_cb(self):
+        """Callback for adding a control point point. Ignores the callback if 
+        there is no end waypoint. Otherwise, adds a interactive marker at the 
+        mid-point of 2 waypoints.
+
+        :returns: None
+
+        """
+        print("add_cp_button pressed")
+        if len(self.waypoints.waypoints) == 0:
+            rospy.logerr('No waypoints selected. Please add a waypoint first')
+            return
+
+        # get the middle point of last two waypoints
+        current_wp = (self.waypoints.waypoints[-1].x, self.waypoints.waypoints[-1].y)
+        last_wp = (0.0, 0.0) if len(self.waypoints.waypoints) == 1 \
+                else (self.waypoints.waypoints[-2].x, self.waypoints.waypoints[-2].y)
+        midpoint = ((current_wp[0]+last_wp[0])/2.0, (current_wp[1]+last_wp[1])/2.0)
+
+        self._add_interactive_marker(midpoint[0], midpoint[1])
+
     def _clicked_point_cb(self, msg):
         """Callback for clicked point. Ignores the message if there is no end waypoint
         Otherwise, adds a interactive marker at the position.
@@ -121,14 +145,28 @@ class GuiEditor(object):
         if len(self.waypoints.waypoints) == 0:
             rospy.logerr('No waypoints selected. Please add a waypoint first')
             return
+        self._add_interactive_marker(msg.point.x, msg.point.y)
+
+    def _add_interactive_marker(self, x, y):
+        """adds a interactive marker at the position.
+
+        :x: float
+        :y: float
+        :returns: None
+
+        """
         self.marker_id_counter += 1
         marker = Utils.get_2_dof_interactive_marker('cp_'+str(self.marker_id_counter),
-                                                    self.frame,
-                                                    msg.point.x,
-                                                    msg.point.y)
-        print(marker)
+                                                    self.frame, x, y)
+        # print(marker)
         self.interactive_marker_server.insert(marker, self.interactive_marker_cb)
         self.interactive_marker_server.applyChanges()
+        wp = self.waypoints.waypoints[-1]
+        if wp.control_points is None:
+            wp.control_points = [{'x': x, 'y': y}]
+        else:
+            wp.control_points.append({'x': x, 'y': y})
+        self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
 
     def interactive_marker_cb(self, feedback):
         """TODO: Docstring for interactive_marker_cb.
@@ -140,7 +178,15 @@ class GuiEditor(object):
         if not feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
             return
         p = feedback.pose.position
-        print(feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z))
+        # print(feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z))
+        cp_index = int(feedback.marker_name[3:])-1
+        wp = self.waypoints.waypoints[-1]
+        if len(wp.control_points) > cp_index:
+            wp.control_points[cp_index]['x'] = p.x
+            wp.control_points[cp_index]['y'] = p.y
+        else:
+            rospy.logerr("Incorrect interactive marker id") # should never come here
+        self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
 
     def _nav_goal_cb(self, msg):
         """Callback for rviz's nav goal messages
@@ -150,9 +196,23 @@ class GuiEditor(object):
 
         """
         x, y, theta = Utils.get_x_y_theta_from_pose(msg.pose)
-        wp_dict = {'x': x, 'y': y, 'theta': theta, 'time': 2.0, 'control_points':[{'x':1.0, 'y':1.0}]}
+        time = simpledialog.askfloat("Time", "Time for the newly added waypoint:", parent=self.root)
+        if time is None or time <= 0.0:
+            if len(self.waypoints.waypoints) > 0:
+                time = self.waypoints.waypoints[-1].time + 1.0
+            else:
+                time = 1.0 
+            rospy.logwarn("Using default time: " + str(time))
+        if len(self.waypoints.waypoints) > 0 and time < self.waypoints.waypoints[-1].time:
+            time = self.waypoints.waypoints[-1].time + 1.0
+            rospy.logwarn("Invalid time entered. Using default time: " + str(time))
+
+        wp_dict = {'x': x, 'y': y, 'theta': theta, 'time': time}
         wp = Waypoint(waypoint_dict=wp_dict, default_vel_curve='trapezoid')
         self.waypoints.waypoints.append(wp)
+        self.interactive_marker_server.clear()
+        self.interactive_marker_server.applyChanges()
+        self.marker_id_counter = 0
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
 
 
