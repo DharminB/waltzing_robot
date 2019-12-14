@@ -2,11 +2,15 @@
 
 from __future__ import print_function
 
+import os
 import copy
+import yaml
 import rospy
 import rosnode
 import tkinter as tk
 import tkSimpleDialog as simpledialog
+import tkFileDialog as filedialog
+import tkMessageBox as messagebox
 
 from geometry_msgs.msg import Point, PoseStamped, PointStamped
 from visualization_msgs.msg import MarkerArray, Marker, InteractiveMarker, InteractiveMarkerControl
@@ -49,6 +53,20 @@ class GuiEditor(object):
         self._gui_init()
         self.waypoints = Waypoints()
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
+
+    def _before_closing(self):
+        self._save_current_wp()
+        self.root.destroy()
+        self.cleanup()
+
+    def _save_current_wp(self):
+        if self.waypoints is not None and len(self.waypoints.waypoints) > 0:
+            chose_to_save = messagebox.askyesnocancel(title='Save current waypoints',
+                                                    message='Do you want to save current waypoints?')
+            if chose_to_save is None:
+                return
+            if chose_to_save:
+                self.save_button_cb()
 
     def update(self):
         """Main loop for updating gui window
@@ -103,10 +121,11 @@ class GuiEditor(object):
         self.root.configure(height=600)
         self.root.configure(width=800)
         self.root.resizable(width=False, height=False)
-        self.status = tk.Label(self.root, text="Welcome to waltzing robot", bd=1,
+        self.root.protocol('WM_DELETE_WINDOW', self._before_closing)
+        self.gui_status = tk.Label(self.root, text="Welcome to waltzing robot", bd=1,
                                relief=tk.SUNKEN, anchor=tk.W)
-        self.status.pack(side=tk.BOTTOM, fill=tk.X)
-        self.status.configure(bg=BGCOLOR, fg=FGCOLOR)
+        self.gui_status.pack(side=tk.BOTTOM, fill=tk.X)
+        self.gui_status.configure(bg=BGCOLOR, fg=FGCOLOR)
         # self.test_button = tk.Button(self.root, text='test', command=self.test_button_cb)
         # self.test_button.configure(bg=BGCOLOR, fg=FGCOLOR)
         # self.test_button.pack(side=tk.RIGHT)
@@ -114,9 +133,47 @@ class GuiEditor(object):
                                        command=self.add_cp_cb, state=tk.DISABLED)
         self.add_cp_button.configure(bg=BGCOLOR, fg=FGCOLOR)
         self.add_cp_button.pack(side=tk.TOP)
+        self.save_button = tk.Button(self.root, text='save',
+                                     command=self.save_button_cb, state=tk.DISABLED)
+        self.save_button.configure(bg=BGCOLOR, fg=FGCOLOR)
+        self.save_button.pack(side=tk.TOP)
+        self.load_button = tk.Button(self.root, text='load',
+                                     command=self.load_button_cb)
+        self.load_button.configure(bg=BGCOLOR, fg=FGCOLOR)
+        self.load_button.pack(side=tk.TOP)
 
     def test_button_cb(self):
         print("button pressed")
+
+    def save_button_cb(self):
+        print("save button pressed")
+        current_dir = os.path.abspath(os.path.dirname(__file__))
+        ros_dir = os.path.dirname(current_dir)
+        waypoints_dir = os.path.join(ros_dir, 'config/waypoints')
+        filename = filedialog.asksaveasfilename(title='Save as',
+                                                initialdir=waypoints_dir,
+                                                defaultextension='.yaml')
+        with open(filename, 'w') as file_obj:
+            file_obj.write(str(self.waypoints))
+        self.gui_status.configure(text='Successfully saved')
+
+    def load_button_cb(self):
+        print("load button pressed")
+        self._save_current_wp()
+        current_dir = os.path.abspath(os.path.dirname(__file__))
+        ros_dir = os.path.dirname(current_dir)
+        waypoints_dir = os.path.join(ros_dir, 'config/waypoints')
+        filename = filedialog.askopenfilename(title='Open',
+                                              initialdir=waypoints_dir,
+                                              filetypes=[('Waypoint config', ('*.yaml'))])
+        with open(filename, 'r') as file_obj:
+            waypoint_config = yaml.safe_load(file_obj)
+            print(waypoint_config)
+            self.waypoints = Waypoints(waypoint_config=waypoint_config)
+        self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
+        self.gui_status.configure(text='Successfully loaded')
+        self.add_cp_button.configure(state=tk.NORMAL)
+        self.save_button.configure(state=tk.NORMAL)
 
     def add_cp_cb(self):
         """Callback for adding a control point point. Ignores the callback if 
@@ -138,6 +195,7 @@ class GuiEditor(object):
         midpoint = ((current_wp[0]+last_wp[0])/2.0, (current_wp[1]+last_wp[1])/2.0)
 
         self._add_interactive_marker(midpoint[0], midpoint[1])
+        self.gui_status.configure(text='Control point added')
 
     def _add_interactive_marker(self, x, y):
         """adds a interactive marker at the position.
@@ -161,7 +219,7 @@ class GuiEditor(object):
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
 
     def interactive_marker_cb(self, feedback):
-        """TODO: Docstring for interactive_marker_cb.
+        """Updates the control point when interactive marker is moved.
 
         :feedback: InteractiveMarkerFeedback
         :returns: None
@@ -179,6 +237,7 @@ class GuiEditor(object):
         else:
             rospy.logerr("Incorrect interactive marker id") # should never come here
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
+        self.gui_status.configure(text='Control point moved')
 
     def _nav_goal_cb(self, msg):
         """Callback for rviz's nav goal messages
@@ -188,17 +247,26 @@ class GuiEditor(object):
 
         """
         self.add_cp_button.configure(state=tk.NORMAL)
+        self.save_button.configure(state=tk.NORMAL)
         x, y, theta = Utils.get_x_y_theta_from_pose(msg.pose)
-        time = simpledialog.askfloat("Time", "Time for the newly added waypoint:", parent=self.root)
-        if time is None or time <= 0.0:
-            if len(self.waypoints.waypoints) > 0:
-                time = self.waypoints.waypoints[-1].time + 1.0
-            else:
-                time = 1.0 
-            rospy.logwarn("Using default time: " + str(time))
-        if len(self.waypoints.waypoints) > 0 and time < self.waypoints.waypoints[-1].time:
-            time = self.waypoints.waypoints[-1].time + 1.0
-            rospy.logwarn("Invalid time entered. Using default time: " + str(time))
+
+        # get time from user
+        time = None
+        while time is None:
+            try:
+                time = simpledialog.askfloat("Time", "Time for the newly added waypoint:", parent=self.root)
+            except Exception as e:
+                messagebox.showerror(title='Error', message='Sorry, an error occurred. Please input again')
+                continue
+            if time is None or time <= 0.0:
+                messagebox.showerror(title='Error', message='Invalid time entered. Please input again')
+                time = None
+                continue
+            if len(self.waypoints.waypoints) > 0 and time < self.waypoints.waypoints[-1].time:
+                messagebox.showerror(title='Error', message='Time entered was less than previous waypoint\'s time. Please input again')
+                time = None
+                continue
+
 
         wp_dict = {'x': x, 'y': y, 'theta': theta, 'time': time}
         wp = Waypoint(waypoint_dict=wp_dict, default_vel_curve='trapezoid')
@@ -207,6 +275,7 @@ class GuiEditor(object):
         self.interactive_marker_server.applyChanges()
         self.marker_id_counter = 0
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
+        self.gui_status.configure(text='Waypoint added')
 
 
 if __name__ == "__main__":
