@@ -8,11 +8,12 @@
         <!-- <param name="localisation_topic" type="str" value="/fake_localisation" /> -->
         <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
         <!-- <param name="odom_topic" type="str" value="/odom" /> -->
-        <param name="frame" type="str" value="odom" />
+        <param name="frame" type="str" value="ropod/odom" />
 
         <param name="sleep_duration" type="double" value="0.1" />
         <param name="max_vel" type="double" value="8.0" />
         <param name="max_acc" type="double" value="8.0" />
+        <param name="allow_unsafe_transition" type="bool" value="false" />
 
 
         <!-- ============================================================== -->
@@ -23,11 +24,11 @@
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/spline.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/line_trapezoid.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/line_trapezoid_small.yaml" /> -->
-        <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/back_and_forth.yaml" /> -->
+        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/back_and_forth.yaml" />
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/test.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/square_trapezoid.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/spline_trapezoid.yaml" /> -->
-        <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid.yaml" />
+        <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid.yaml" /> -->
         <!-- <rosparam command="load" param="waypoint_config" file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid_small.yaml" /> -->
 
     </node>

@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /TF1/Frames1
+        - /Navigation1
       Splitter Ratio: 0.51901567
     Tree Height: 616
   - Class: rviz/Selection
@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: scan_front
   - Class: rviz/Displays
     Help Height: 0
     Name: Displays
@@ -62,37 +62,132 @@ Visualization Manager:
     - Alpha: 0.800000012
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base_link_body:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        computer:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_front_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_rear_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_front_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_rear_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        ropod/base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_link:
+        base_link_body:
+          Value: false
+        computer:
+          Value: false
+        front_laser:
+          Value: false
+        left_front_wheel:
+          Value: false
+        left_rear_wheel:
+          Value: false
+        load/base_link:
+          Value: false
+        map:
+          Value: false
+        my_frame:
+          Value: false
+        right_front_wheel:
+          Value: false
+        right_rear_wheel:
+          Value: false
+        ropod/base_link:
           Value: true
-        odom:
+        ropod/laser/scan:
+          Value: false
+        ropod/odom:
           Value: true
+        ropod/sick_laser/scan:
+          Value: false
+        rslidar:
+          Value: false
+        rslidar_projected_back:
+          Value: false
+        rslidar_projected_front:
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_link:
-            {}
+        my_frame:
+          map:
+            ropod/odom:
+              ropod/base_link:
+                base_link_body:
+                  computer:
+                    {}
+                  front_laser:
+                    {}
+                  left_front_wheel:
+                    {}
+                  left_rear_wheel:
+                    {}
+                  right_front_wheel:
+                    {}
+                  right_rear_wheel:
+                    {}
+                load/base_link:
+                  {}
+                ropod/laser/scan:
+                  {}
+                ropod/sick_laser/scan:
+                  {}
+                rslidar:
+                  rslidar_projected_back:
+                    {}
+                  rslidar_projected_front:
+                    {}
       Update Interval: 0
       Value: true
     - Class: rviz/Group
@@ -141,7 +236,7 @@ Visualization Manager:
           Axes Radius: 0.00999999978
           Class: rviz/PoseArray
           Color: 255; 25; 0
-          Enabled: true
+          Enabled: false
           Head Length: 0.100000001
           Head Radius: 0.119999997
           Name: Waypoints
@@ -150,7 +245,7 @@ Visualization Manager:
           Shape: Arrow (3D)
           Topic: /ropod/waypoints
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 1
           Arrow Length: 0.200000003
           Axes Length: 0.300000012
@@ -181,7 +276,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: odom
+    Fixed Frame: ropod/odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -202,25 +297,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.62714624
+      Distance: 5.38876581
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -2.03714085
-        Y: 6.63868523
-        Z: 0.581074178
+        X: 1.4398818
+        Y: -0.156120807
+        Z: 0.618421376
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.55979633
+      Pitch: 1.56479633
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.13640308
+      Yaw: 4.70640564
     Saved: ~
 Window Geometry:
   Displays:

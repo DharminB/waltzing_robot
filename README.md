@@ -5,7 +5,10 @@ Make a planar mobile robot follow choreography using waypoints
 ## Dependencies
 - [ropod_sim_model](https://github.com/ropod-project/ropod_sim_model)
 
-## Waypoint choreography (under development)
+## Waypoint choreography
+
+### GUI for creating waypoint trajectory
+![gui_demo](docs/gui_demo.gif)
 
 ### Trajectory using linear velocity
 ![rvizImage](docs/waltz_trajectory.png)
@@ -13,4 +16,6 @@ Make a planar mobile robot follow choreography using waypoints
 
 ### Trajectory using trapezoid velocity curve
 ![rvizImage](docs/trapezoid_vel_curve.png)
+
+### Trajectory using trapezoid velocity containing spline curves
 ![rvizImage](docs/supereclipse_trapezoid_vel_curve.png)

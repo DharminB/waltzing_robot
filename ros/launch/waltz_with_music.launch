@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
+
+        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
+        <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
+        <!-- <param name="cmd_vel_topic" type="str" value="/cmd_vel" /> -->
+        <!-- <param name="odom_topic" type="str" value="/odom" /> -->
+        <param name="frame" type="str" value="odom" />
+
+        <param name="waypoints_topic" type="str" value="/ropod/waypoints" />
+
+        <param name="sleep_duration" type="double" value="0.1" />
+        <param name="max_vel" type="double" value="8.0" />
+        <param name="max_acc" type="double" value="8.0" />
+
+        <param name="music_file_name" type="str" value="$(find waltzing_robot)/waltz.wav" />
+
+
+        <rosparam command="load" param="waypoint_config"
+            file="$(find waltzing_robot)/ros/config/waypoints/supereclipse_trapezoid_small.yaml" />
+
+    </node>
+</launch>
