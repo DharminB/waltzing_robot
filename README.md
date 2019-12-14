@@ -16,4 +16,6 @@ Make a planar mobile robot follow choreography using waypoints
 
 ### Trajectory using trapezoid velocity curve
 ![rvizImage](docs/trapezoid_vel_curve.png)
+
+### Trajectory using trapezoid velocity containing spline curves
 ![rvizImage](docs/supereclipse_trapezoid_vel_curve.png)
