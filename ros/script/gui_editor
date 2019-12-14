@@ -41,16 +41,11 @@ class GuiEditor(object):
                                              PoseStamped,
                                              self._nav_goal_cb)
 
-        self._clicked_point_sub = rospy.Subscriber('/clicked_point',
-                                                   PointStamped,
-                                                   self._clicked_point_cb)
-
         # servers
         self.interactive_marker_server = InteractiveMarkerServer("two_dof_marker")
 
 
         rospy.sleep(1) # sleep to initialise publishers completely
-        # self.gui_app = MainApplication()
         self._gui_init()
         self.waypoints = Waypoints()
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
@@ -90,6 +85,15 @@ class GuiEditor(object):
                     break
             if rviz_node is not None:
                 rosnode.kill_nodes([rviz_node])
+
+        if self.waypoints is not None:
+            print("\n\n")
+            print("Printing waypoints for backup")
+            print("If an error occurred, just paste the following to a .yaml file")
+            print("\n\n")
+            print(self.waypoints)
+            print()
+
         rospy.loginfo("Exiting.")
 
     def _gui_init(self):
@@ -99,16 +103,17 @@ class GuiEditor(object):
         self.root.configure(height=600)
         self.root.configure(width=800)
         self.root.resizable(width=False, height=False)
-        self.status = tk.Label(self.root, text="x: 0, y: 0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status = tk.Label(self.root, text="Welcome to waltzing robot", bd=1,
+                               relief=tk.SUNKEN, anchor=tk.W)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
         self.status.configure(bg=BGCOLOR, fg=FGCOLOR)
-        # self.canvas = GuiCanvas(self.root)
-        self.test_button = tk.Button(self.root, text='test', command=self.test_button_cb)
-        self.test_button.configure(bg=BGCOLOR, fg=FGCOLOR)
-        self.test_button.pack(side=tk.RIGHT)
-        self.add_cp_button = tk.Button(self.root, text='Add control point', command=self.add_cp_cb)
+        # self.test_button = tk.Button(self.root, text='test', command=self.test_button_cb)
+        # self.test_button.configure(bg=BGCOLOR, fg=FGCOLOR)
+        # self.test_button.pack(side=tk.RIGHT)
+        self.add_cp_button = tk.Button(self.root, text='Add control point',
+                                       command=self.add_cp_cb, state=tk.DISABLED)
         self.add_cp_button.configure(bg=BGCOLOR, fg=FGCOLOR)
-        self.add_cp_button.pack(side=tk.RIGHT)
+        self.add_cp_button.pack(side=tk.TOP)
 
     def test_button_cb(self):
         print("button pressed")
@@ -133,19 +138,6 @@ class GuiEditor(object):
         midpoint = ((current_wp[0]+last_wp[0])/2.0, (current_wp[1]+last_wp[1])/2.0)
 
         self._add_interactive_marker(midpoint[0], midpoint[1])
-
-    def _clicked_point_cb(self, msg):
-        """Callback for clicked point. Ignores the message if there is no end waypoint
-        Otherwise, adds a interactive marker at the position.
-
-        :msg: geometry_msgs.PointStamped
-        :returns: None
-
-        """
-        if len(self.waypoints.waypoints) == 0:
-            rospy.logerr('No waypoints selected. Please add a waypoint first')
-            return
-        self._add_interactive_marker(msg.point.x, msg.point.y)
 
     def _add_interactive_marker(self, x, y):
         """adds a interactive marker at the position.
@@ -195,6 +187,7 @@ class GuiEditor(object):
         :returns: None
 
         """
+        self.add_cp_button.configure(state=tk.NORMAL)
         x, y, theta = Utils.get_x_y_theta_from_pose(msg.pose)
         time = simpledialog.askfloat("Time", "Time for the newly added waypoint:", parent=self.root)
         if time is None or time <= 0.0:
