@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="num_of_loop" default="1" /> <!-- "-1" for infinite -->
+
+    <node pkg="waltzing_robot" name="routine_executor" type="routine_executor" output="screen">
+
+        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
+        <!-- <param name="cmd_vel_topic" type="str" value="/cmd_vel" /> -->
+
+        <!-- <param name="localisation_topic" type="str" value="/fake_localisation" /> -->
+        <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
+        <!-- <param name="odom_topic" type="str" value="/odom" /> -->
+
+        <param name="frame" type="str" value="/odom" />
+
+        <param name="sleep_duration" type="double" value="0.1" />
+        <param name="max_vel" type="double" value="8.0" />
+        <param name="max_acc" type="double" value="8.0" />
+        <param name="allow_unsafe_transition" type="bool" value="true" />
+
+    </node>
+</launch>
