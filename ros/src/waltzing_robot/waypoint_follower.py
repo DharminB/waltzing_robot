@@ -23,10 +23,7 @@ class WaypointFollower(object):
     def __init__(self):
         # read ros param
         cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
-        odom_topic = rospy.get_param('~odom_topic', '/ropod/odom_incomplete')
-        waypoint_config = rospy.get_param('~waypoint_config', None)
-        waypoints_topic = rospy.get_param('~waypoints_topic', '/ropod/waypoints')
-        trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
+        odom_topic = rospy.get_param('~odom_topic', '/odom')
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
         self.frame = rospy.get_param('~frame', 'odom')
         music_file_name = rospy.get_param('~music_file_name', None)
@@ -41,7 +38,7 @@ class WaypointFollower(object):
 
         # publishers
         self._cmd_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=1)
-        self._trajectory_pub = rospy.Publisher(trajectory_topic, PoseArray, queue_size=1)
+        self._trajectory_pub = rospy.Publisher('~trajectory', PoseArray, queue_size=1)
         self._waypoints_marker_pub = rospy.Publisher('~waypoints_marker', MarkerArray, queue_size=1)
 
         # subscribers
@@ -102,10 +99,10 @@ class WaypointFollower(object):
 
         # self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
-        # return False
         self.music_player.start_playing()
         start_time = rospy.get_time()
         last_wp_time = 0.0
+
         # iterate over all wp and execute trajectory
         for self._vel_curve_handler.trajectory_index, wp in enumerate(waypoints[1:]):
             print(wp)
