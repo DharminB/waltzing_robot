@@ -83,12 +83,13 @@ class WaypointFollower(object):
 
         # convert wp to local frame
         start_pose = copy.deepcopy(self.current_position)
+        x, y, theta = start_pose
         for wp in waypoints_obj.waypoints:
             wp.shift(*start_pose)
-        self._waypoints_marker_pub.publish(waypoints_obj.to_marker_array(self.frame))
+        self._waypoints_marker_pub.publish(
+                waypoints_obj.to_marker_array(self.frame, x, y, theta))
 
         # create dummy wp out of current position
-        x, y, theta = start_pose
         current = Waypoint({'x': x, 'y': y, 'theta': theta, 'time':0.0})
         waypoints = waypoints_obj.waypoints
         waypoints.insert(0, current)
