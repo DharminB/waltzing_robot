@@ -3,13 +3,7 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /Global Options1
-        - /RobotModel1
-        - /RobotModel1/Status1
-        - /Navigation1
-        - /Choreographed trajectory1
-        - /Choreographed trajectory1/Status1
+      Expanded: ~
       Splitter Ratio: 0.51901567
     Tree Height: 616
   - Class: rviz/Selection
@@ -39,7 +33,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1/Frames1
-        - /Navigation1
       Splitter Ratio: 0.5
     Tree Height: 444
 Toolbars:
@@ -167,56 +160,36 @@ Visualization Manager:
                 {}
       Update Interval: 0
       Value: true
-    - Class: rviz/Group
-      Displays:
-        - Alpha: 1
-          Class: rviz/Polygon
-          Color: 255; 85; 0
-          Enabled: true
-          Name: robot_footprint
-          Topic: /move_base/local_costmap/footprint
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Arrow Length: 0.300000012
-          Axes Length: 0.300000012
-          Axes Radius: 0.00999999978
-          Class: rviz/PoseArray
-          Color: 255; 25; 0
-          Enabled: false
-          Head Length: 0.100000001
-          Head Radius: 0.119999997
-          Name: Waypoints
-          Shaft Length: 0.230000004
-          Shaft Radius: 0.0500000007
-          Shape: Arrow (3D)
-          Topic: /ropod/waypoints
-          Unreliable: false
-          Value: false
-        - Alpha: 1
-          Arrow Length: 0.200000003
-          Axes Length: 0.300000012
-          Axes Radius: 0.00999999978
-          Class: rviz/PoseArray
-          Color: 85; 170; 0
-          Enabled: true
-          Head Length: 0.0700000003
-          Head Radius: 0.0299999993
-          Name: Trajectory
-          Shaft Length: 0.230000004
-          Shaft Radius: 0.00999999978
-          Shape: Arrow (Flat)
-          Topic: /ropod/trajectory
-          Unreliable: false
-          Value: true
-      Enabled: true
-      Name: Navigation
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /waltzer/waypoints_marker
       Name: Choreographed trajectory
       Namespaces:
-        "": true
+        {}
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Arrow Length: 0.200000003
+      Axes Length: 0.300000012
+      Axes Radius: 0.00999999978
+      Class: rviz/PoseArray
+      Color: 85; 170; 0
+      Enabled: true
+      Head Length: 0.0700000003
+      Head Radius: 0.0299999993
+      Name: Trajectory
+      Shaft Length: 0.230000004
+      Shaft Radius: 0.00999999978
+      Shape: Arrow (Flat)
+      Topic: /waltzer/trajectory
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /routine_executor/waypoints_marker
+      Name: Routine trajectory
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -251,9 +224,9 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.4398818
-        Y: -0.156120807
-        Z: 0.618421376
+        X: 0.878814876
+        Y: -0.0417202823
+        Z: 0.61908716
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false

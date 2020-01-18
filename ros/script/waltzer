@@ -3,194 +3,25 @@
 from __future__ import print_function
 
 import rospy
-import time
-import math
-import copy
 import traceback
 
-from geometry_msgs.msg import Twist, PoseArray, PolygonStamped, Point32
-from visualization_msgs.msg import MarkerArray, Marker
-from nav_msgs.msg import Odometry
+from waltzing_robot.waypoint_follower import WaypointFollower
 
-from waltzing_robot.waypoints import Waypoints, Waypoint
-from waltzing_robot.vel_curve_handler import VelCurveHandler
-from waltzing_robot.music_player import MusicPlayer
-from waltzing_robot.utils import Utils
-
-class Waltzer(object):
-
-    """Waltzer ros node"""
-
-    def __init__(self):
-        # read ros param
-        cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
-        odom_topic = rospy.get_param('~odom_topic', '/ropod/odom_incomplete')
-        waypoint_config = rospy.get_param('~waypoint_config', None)
-        waypoints_topic = rospy.get_param('~waypoints_topic', '/ropod/waypoints')
-        trajectory_topic = rospy.get_param('~trajectory_topic', '/ropod/trajectory')
-        self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
-        max_vel = rospy.get_param('~max_vel', 8.0)
-        max_acc = rospy.get_param('~max_acc', 8.0)
-        allow_unsafe_transition = rospy.get_param('~allow_unsafe_transition', True)
-        self.frame = rospy.get_param('~frame', 'odom')
-        music_file_name = rospy.get_param('~music_file_name', None)
-        self.music_player = MusicPlayer(music_file_name)
-
-        # class variables
-        self.frame_id = waypoint_config.get('frame', self.frame)
-        print(self.frame_id)
-        if waypoint_config is not None:
-            self.waypoints = Waypoints(waypoint_config=waypoint_config)
-        else:
-            self.waypoints = Waypoints()
-        self._vel_curve_handler = VelCurveHandler(max_vel=max_vel,
-                                                  max_acc=max_acc,
-                                                  allow_unsafe_transition=allow_unsafe_transition)
-        self.current_position = (0.0, 0.0, 0.0)
-
-        # publishers
-        self._cmd_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=1)
-        self._waypoints_pub = rospy.Publisher(waypoints_topic, PoseArray, queue_size=1)
-        self._trajectory_pub = rospy.Publisher(trajectory_topic, PoseArray, queue_size=1)
-        self._spline_curve_pub = rospy.Publisher('~spline_curve', PolygonStamped, queue_size=1)
-        self._waypoints_marker_pub = rospy.Publisher('~waypoints_marker', MarkerArray, queue_size=1)
-
-        # subscribers
-        self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
-        
-        time.sleep(1) # sleep to initialise publishers completely
-
-    def _odom_cb(self, msg):
-        self.current_position = Utils.get_x_y_theta_from_pose(msg.pose.pose)
-
-    def follow_waypoints(self):
-        """Follow waypoints defined by class variable with their vel curve motion
-        Returns true if the whole trajectory was executed completely
-
-        :returns: bool
-
-        """
-        # convert wp to local frame
-        start_pose = copy.deepcopy(self.current_position)
-        shifted_waypoints = copy.deepcopy(self.waypoints)
-        for wp in shifted_waypoints.waypoints:
-            wp.shift(*start_pose)
-        self._waypoints_marker_pub.publish(shifted_waypoints.to_marker_array(self.frame))
-
-        # create dummy wp out of current position
-        x, y, theta = start_pose
-        current = Waypoint({'x': x, 'y': y, 'theta': theta, 'time':0.0})
-        waypoints = copy.deepcopy(shifted_waypoints.waypoints)
-        waypoints.insert(0, current)
-
-        # check if waypoint trajectory is possible
-        possible = self._vel_curve_handler.set_params(waypoints)
-        if not possible:
-            rospy.logwarn("Impossible trajectory encountered. Giving up.")
-            return False
-
-        if 'curve_points' in self._vel_curve_handler.trajectory_data_list[0]:
-            polygon_msg = PolygonStamped()
-            polygon_msg.header.stamp = rospy.Time.now()
-            polygon_msg.header.frame_id = self.frame
-            points = []
-            for cp in self._vel_curve_handler.trajectory_data_list[0]['curve_points']:
-                points.append(Point32(x=cp[0], y=cp[1]))
-            polygon_msg.polygon.points = points
-            self._spline_curve_pub.publish(polygon_msg)
-
-        self.visualise_trajectory(waypoints)
-        self._vel_curve_handler.reset_trajectory_data()
-        # return False
-        self.music_player.start_playing()
-        start_time = rospy.get_time()
-        last_wp_time = 0.0
-        # iterate over all wp and execute trajectory
-        for self._vel_curve_handler.trajectory_index, wp in enumerate(waypoints[1:]):
-            print(wp)
-            while start_time + wp.time > rospy.get_time():
-                if rospy.is_shutdown():
-                    self.publish_zero_vel()
-                    return False
-
-                x, y, theta = self._vel_curve_handler.get_vel(
-                        rospy.get_time() - start_time - last_wp_time,
-                        current_position=self.current_position)
-                # print(x, y, theta)
-                self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
-
-                rospy.sleep(self.sleep_duration)
-            last_wp_time = wp.time
-        end_time = rospy.get_time()
-        print("Trajectory executed in", end_time - start_time, "seconds")
-        self.publish_zero_vel()
-        self.music_player.stop_playing()
-        return True
-
-    def visualise_trajectory(self, waypoints):
-        """Publish PoseArray representing the trajectory
-        :waypoints: list of Waypoint obj
-        :returns: None
-
-        """
-        pose_array = PoseArray()
-        pose_array.header.frame_id = self.frame_id
-        pose_array.header.stamp = rospy.Time.now()
-        poses = []
-        current_time = 0.0
-        delta_time = 0.1
-        x, y, theta = self.current_position
-        last_wp_time = 0.0
-        for self._vel_curve_handler.trajectory_index, wp in enumerate(waypoints[1:]):
-            while current_time < wp.time:
-                # current position has to be given (0,0,0) because the cmd_vel
-                # are applied in robot's frame whereas the poses are published
-                # in global frame
-                x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(
-                        current_time - last_wp_time,
-                        current_position=(x, y, theta))
-                        # current_position=(0.0, 0.0, 0.0))
-                x += x_vel*math.cos(theta)*delta_time - y_vel*math.sin(theta)*delta_time
-                y += x_vel*math.sin(theta)*delta_time + y_vel*math.cos(theta)*delta_time
-                theta += theta_vel*delta_time
-                pose = Utils.get_pose_from_x_y_theta(x, y, theta)
-                poses.append(pose)
-                current_time += delta_time
-                # time.sleep(delta_time)
-                # pose_array.poses = poses
-                # self._trajectory_pub.publish(pose_array)
-            last_wp_time = wp.time
-        pose_array.poses = poses
-        self._trajectory_pub.publish(pose_array)
-
-    def _get_twist(self, x=0.0, y=0.0, theta=0.0):
-        """Return twist ros message object.
-
-        :x: float
-        :y: float
-        :theta: float
-        :returns: geometry_msgs.msg.Twist
-
-        """
-        msg = Twist()
-        msg.linear.x = x
-        msg.linear.y = y
-        msg.angular.z = theta
-        return msg
-
-    def publish_zero_vel(self):
-        self._cmd_vel_pub.publish(self._get_twist())
-
-if __name__ == "__main__":
+def main():
     rospy.init_node('waltzer')
-    WALTZER = Waltzer()
+    wp_follower = WaypointFollower()
     try:
         remaining_loop = rospy.get_param('~num_of_loop', 1)
+        waypoint_config_filename = rospy.get_param('~waypoint_config_filename', None)
+        print(waypoint_config_filename)
         success = True
         while remaining_loop != 0 and success:
-            success = WALTZER.follow_waypoints()
+            success = wp_follower.follow_waypoints(waypoint_config_filename)
             remaining_loop -= 1
     except Exception as e:
         rospy.logerr(str(e))
         traceback.print_exc()
-        WALTZER.publish_zero_vel()
+        wp_follower.publish_zero_vel()
+
+if __name__ == "__main__":
+    main()

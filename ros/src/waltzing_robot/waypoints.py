@@ -112,7 +112,7 @@ class Waypoints(object):
         pose_array.poses = [wp.to_pose() for wp in self.waypoints]
         return pose_array
 
-    def to_marker_array(self, frame):
+    def to_marker_array(self, frame, init_x=0.0, init_y=0.0, init_theta=0.0):
         """Return a MarkerArray object representing the trajectory formed by waypoints
 
         :frame: string
@@ -120,9 +120,9 @@ class Waypoints(object):
 
         """
         waypoints = copy.deepcopy(self)
-        waypoints.waypoints.insert(0, Waypoint(waypoint_dict={'x': 0.0,
-                                                              'y': 0.0,
-                                                              'theta': 0.0,
+        waypoints.waypoints.insert(0, Waypoint(waypoint_dict={'x': init_x,
+                                                              'y': init_y,
+                                                              'theta': init_theta,
                                                               'time': 0.0},
                                                default_vel_curve=self.default_vel_curve))
         marker_array = MarkerArray()
