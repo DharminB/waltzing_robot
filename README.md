@@ -7,15 +7,14 @@ Make a planar mobile robot follow choreography using waypoints
 
 ## Waypoint choreography
 
-### GUI for creating waypoint trajectory
-![gui_demo](docs/gui_demo.gif)
-
 ### Trajectory using linear velocity
-![rvizImage](docs/waltz_trajectory.png)
 ![rvizImage](docs/square_clockwise_linear.png)
 
 ### Trajectory using trapezoid velocity curve
 ![rvizImage](docs/trapezoid_vel_curve.png)
 
 ### Trajectory using trapezoid velocity containing spline curves
-![rvizImage](docs/supereclipse_trapezoid_vel_curve.png)
+![gui_demo](docs/infinity.gif)
+
+### GUI for creating waypoint trajectory
+![gui_demo](docs/gui_demo.gif)
