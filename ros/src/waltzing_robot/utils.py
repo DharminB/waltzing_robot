@@ -140,7 +140,7 @@ class Utils(object):
         dist = 0.0
         for i in range(len(points)-1):
             dist += Utils.get_distance_between_points(points[i], points[i+1])
-        return max(int(dist)*2, 10)
+        return max(int(dist)*3, 10)
 
     @staticmethod
     def get_2_dof_interactive_marker(marker_name, frame, x=0.0, y=0.0):
