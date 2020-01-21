@@ -25,6 +25,7 @@ class RoutineExecutor(object):
 
     def _execute_wp_trajectory(self, msg):
         if self._in_motion:
+            rospy.logwarn("Robot in motion. Ignoring request")
             return
         wp_config = msg.data
         waypoint_config_filename = os.path.join(self._waypoints_folder_path,
@@ -39,7 +40,7 @@ class RoutineExecutor(object):
             traceback.print_exc()
             self._wp_follower.publish_zero_vel()
 
-        safe__in_motion = False
+        self._in_motion = False
         print("\n"*3, "Finished", "\n"*3)
 
 if __name__ == "__main__":

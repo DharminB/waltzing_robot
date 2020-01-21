@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import copy
 import yaml
+import time
 import rospy
 import rosnode
 import tkinter as tk
@@ -49,7 +50,7 @@ class GuiEditor(object):
         self.interactive_marker_server = InteractiveMarkerServer("two_dof_marker")
 
 
-        rospy.sleep(1) # sleep to initialise publishers completely
+        time.sleep(1.0)
         self._gui_init()
         self.waypoints = Waypoints()
         self._waypoints_pub.publish(self.waypoints.to_marker_array(self.frame))
