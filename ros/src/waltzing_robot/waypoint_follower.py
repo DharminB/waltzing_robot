@@ -66,7 +66,7 @@ class WaypointFollower(object):
             rospy.logerr("File could not be read!")
             return None
 
-    def follow_waypoints(self, waypoint_config_filename=None):
+    def follow_waypoints(self, waypoint_config_filename=None, visualise_trajectory=True):
         """Follow waypoints defined by class variable with their vel curve motion
         Returns true if the whole trajectory was executed completely
 
@@ -97,7 +97,8 @@ class WaypointFollower(object):
             rospy.logwarn("Impossible trajectory encountered. Giving up.")
             return False
 
-        # self.visualise_trajectory(waypoints)
+        if visualise_trajectory:
+            self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
         self.music_player.start_playing()
         start_time = rospy.get_time()
