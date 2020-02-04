@@ -3,7 +3,9 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /Routine trajectory1
+        - /Meta WP Routine trajectory1
       Splitter Ratio: 0.51901567
     Tree Height: 616
   - Class: rviz/Selection
@@ -190,6 +192,14 @@ Visualization Manager:
       Name: Routine trajectory
       Namespaces:
         {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /meta_wp_executor/waypoints_marker
+      Name: Meta WP Routine trajectory
+      Namespaces:
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
