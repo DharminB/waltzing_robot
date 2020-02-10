@@ -16,14 +16,14 @@ class MetaWPExecutor(object):
 
     def __init__(self):
         self._wp_follower = WaypointFollower()
-        self.meta_wp_config = rospy.get_param('~meta_wp_config', None)
+        self.waypoint_config_files = rospy.get_param('~waypoint_config_files', None)
         scripts_dir = os.path.abspath(os.path.dirname(__file__))
         main_dir = os.path.dirname(scripts_dir)
         self._waypoints_folder_path = os.path.join(main_dir, 'config/waypoints')
         self._in_motion = False
 
     def execute_meta_wp_trajectory(self):
-        for wp_config in self.meta_wp_config:
+        for wp_config in self.waypoint_config_files:
             waypoint_config_filename = os.path.join(self._waypoints_folder_path,
                                                     wp_config + '.yaml')
             print("\n"*3, "Starting", wp_config, "\n"*3)
