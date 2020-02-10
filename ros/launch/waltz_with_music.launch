@@ -13,6 +13,7 @@
         <param name="sleep_duration" type="double" value="0.1" />
         <param name="max_vel" type="double" value="8.0" />
         <param name="max_acc" type="double" value="8.0" />
+        <param name="max_dec" type="double" value="8.0" />
 
         <param name="music_file_name" type="str" value="$(find waltzing_robot)/waltz.wav" />
 
