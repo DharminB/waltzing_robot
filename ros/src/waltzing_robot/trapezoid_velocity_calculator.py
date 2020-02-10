@@ -20,6 +20,16 @@ class TrapezoidVelocityCalculator(object):
         self.v_tolerance = self.v_min
         self.num_of_sample = num_of_sample
 
+    def __str__(self):
+        string = ""
+        string += 'max_vel: ' + str(self.v_max) + '\n'
+        string += 'min_vel: ' + str(self.v_min) + '\n'
+        string += 'max_acc: ' + str(self.a_max) + '\n'
+        string += 'max_dec: ' + str(self.d_max) + '\n'
+        string += 'num_of_sample: ' + str(self.num_of_sample) + '\n'
+        string += 'vel tolerance: ' + str(self.v_tolerance) + '\n'
+        return string
+
     def calc_desired_vel(self, distance=1.0, time=1.0):
         """
         Calculates desired velocity for travelling given distance in a specified
@@ -33,6 +43,7 @@ class TrapezoidVelocityCalculator(object):
         """
         vel_range_queue = [{'v_start': self.v_min, 'v_stop': self.v_max}]
         vel_answer_candidates = []
+
         while len(vel_range_queue) > 0:
             vel_range = vel_range_queue.pop(0)
             data = TrapezoidVelocityCalculator.sample_between_vel_range(self.a_max,
@@ -41,6 +52,10 @@ class TrapezoidVelocityCalculator(object):
                                                                         vel_range['v_start'],
                                                                         vel_range['v_stop'],
                                                                         self.num_of_sample)
+            # print(vel_range)
+            # for i in data:
+            #     print(i)
+
             for i in range(len(data)-1):
                 counter = 0
                 counter += 1 if (data[i][1] - time) > 0 else 0

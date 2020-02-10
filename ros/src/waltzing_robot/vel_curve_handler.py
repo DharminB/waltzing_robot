@@ -6,6 +6,7 @@ import copy
 import traceback
 from waltzing_robot.utils import Utils
 from waltzing_robot.waypoints import Waypoint, Waypoints
+from waltzing_robot.trapezoid_velocity_calculator import TrapezoidVelocityCalculator
 
 class VelCurveHandler(object):
 
@@ -13,15 +14,21 @@ class VelCurveHandler(object):
     
     :max_vel: float
     :max_acc: float
+    :max_dec: float
     
     """
 
     def __init__(self, **kwargs):
         self.max_vel = kwargs.get('max_vel', float('inf'))
         self.max_acc = kwargs.get('max_acc', float('inf'))
+        self.max_dec = kwargs.get('max_dec', float('inf'))
         self.curve_point_distance_tolerance = 0.05
         self.trajectory_data_list = list()
         self.trajectory_index = 0
+        self.traj_vel_calc = TrapezoidVelocityCalculator(max_acc=self.max_acc,
+                                                         max_dec=self.max_dec,
+                                                         max_vel=self.max_vel)
+
         self.allow_unsafe_transition = kwargs.get('allow_unsafe_transition', True)
         tos_radius = kwargs.get('turn_on_spot_radius', 0.1) # turn on spot radius
         self.tos_time = kwargs.get('turn_on_spot_time', 1.5)
@@ -36,6 +43,7 @@ class VelCurveHandler(object):
         string = ""
         string += 'max_vel: ' + str(self.max_vel) + '\n'
         string += 'max_acc: ' + str(self.max_acc) + '\n'
+        string += 'max_dec: ' + str(self.max_dec) + '\n'
         string += 'trajectory_data_list: ' + str(self.trajectory_data_list)
         return string
 
@@ -244,19 +252,17 @@ class VelCurveHandler(object):
             data['distances'] = distances
             dist = distances[-1]
             data['curve_point_index'] = 1
-        discriminant = (data['time'] * self.max_acc)**2 - (4 * self.max_acc * dist)
-        if discriminant < 0:
+
+        desired_vel_list = self.traj_vel_calc.calc_desired_vel(distance=dist, time=data['time'])
+        if len(desired_vel_list) == 0:
             print("No velocity solution found")
             return None
-        des_vel_sol_1 = ((data['time'] * self.max_acc) + (discriminant)**0.5)/2.0
-        des_vel_sol_2 = ((data['time'] * self.max_acc) - (discriminant)**0.5)/2.0
-        if 0 < min(des_vel_sol_1, des_vel_sol_2) <= self.max_vel:
-            data['vel'] = min(des_vel_sol_1, des_vel_sol_2)
-        else:
-            print("No valid velocity solution found. Found solutions: ", des_vel_sol_1, "and ", des_vel_sol_2)
-            return None
-        data['acc_time'] = data['vel']/self.max_acc
-        data['const_vel_time'] = data['time'] - (2 * data['acc_time'])
+
+        desired_vel = desired_vel_list[0]
+        data['vel'] = desired_vel['vel']
+        data['acc_time'] = desired_vel['t_acc']
+        data['const_vel_time'] = desired_vel['t_const_vel']
+        data['dec_time'] = desired_vel['t_dec']
         return data
 
     def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):

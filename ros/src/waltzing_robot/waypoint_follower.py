@@ -33,6 +33,7 @@ class WaypointFollower(object):
         self._vel_curve_handler = VelCurveHandler(
                 max_vel=rospy.get_param('~max_vel', 8.0),
                 max_acc=rospy.get_param('~max_acc', 8.0),
+                max_dec=rospy.get_param('~max_dec', 8.0),
                 allow_unsafe_transition=rospy.get_param('~allow_unsafe_transition', True))
         self.current_position = (0.0, 0.0, 0.0)
 
