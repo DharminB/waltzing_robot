@@ -18,8 +18,8 @@
         <param name="max_acc" type="double" value="8.0" />
         <param name="allow_unsafe_transition" type="bool" value="true" />
 
-        <rosparam param="meta_wp_config" command="load"
-                  file="$(find waltzing_robot)/ros/config/waypoints/$(arg meta_wp_config)" />
+        <rosparam command="load"
+                  file="$(find waltzing_robot)/ros/config/meta_waypoints/$(arg meta_wp_config)" />
 
     </node>
 </launch>
