@@ -1,0 +1,8 @@
+default_vel_curve: trapezoid
+waypoints:
+  - x: 1.995
+    y: 0.013
+    theta: 3.18
+    time: 10.0
+    vel_curve: trapezoid
+    control_points: [{'y': -1.1743005514144897, 'x': 3.4851787090301514}, {'y': -1.5231540203094482, 'x': -1.0943758487701416}]
