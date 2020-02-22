@@ -1,3 +1,5 @@
 waypoint_config_files:
     - triangle
     - reverse_triangle
+    - triangle
+    - reverse_triangle

@@ -24,6 +24,7 @@ class MetaWPExecutor(object):
         self._in_motion = False
 
         trigger_sub = rospy.Subscriber('~meta_wp_file_name', String, self.trigger_cb)
+        rospy.loginfo('Initialised')
 
     def execute_meta_wp_trajectory(self, meta_wp_config_file_name='meta_test'):
         # read meta config file

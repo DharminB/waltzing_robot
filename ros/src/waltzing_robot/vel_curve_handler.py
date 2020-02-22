@@ -272,6 +272,8 @@ class VelCurveHandler(object):
         # print(current_position)
         # print(data['curve_points'][data['curve_point_index']])
         # print(data)
+        if data['vel'] == 0.0:
+            return (0.0, 0.0, 0.0)
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
         if 'curve_points' in data:
@@ -303,7 +305,7 @@ class VelCurveHandler(object):
                 total_remaining_distance = 0.0
         total_remaining_time = data['time'] - time_duration
         req_vel = total_remaining_distance / total_remaining_time
-        if total_remaining_time < 0.1: # if no time left, dont bother correcting
+        if total_remaining_time < 0.2: # if no time left, dont bother correcting
             req_vel = data['vel']
 
         # print('req_vel', req_vel)

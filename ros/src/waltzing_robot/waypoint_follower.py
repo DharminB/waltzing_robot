@@ -13,7 +13,7 @@ from nav_msgs.msg import Odometry
 
 from waltzing_robot.waypoints import Waypoints, Waypoint
 from waltzing_robot.vel_curve_handler import VelCurveHandler
-from waltzing_robot.music_player import MusicPlayer
+# from waltzing_robot.music_player import MusicPlayer
 from waltzing_robot.utils import Utils
 
 class WaypointFollower(object):
@@ -27,7 +27,7 @@ class WaypointFollower(object):
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
         self.frame = rospy.get_param('~frame', 'odom')
         music_file_name = rospy.get_param('~music_file_name', None)
-        self.music_player = MusicPlayer(music_file_name)
+        # self.music_player = MusicPlayer(music_file_name)
 
         # class variables
         self._vel_curve_handler = VelCurveHandler(
@@ -101,7 +101,7 @@ class WaypointFollower(object):
         if visualise_trajectory:
             self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
-        self.music_player.start_playing()
+        # self.music_player.start_playing()
         start_time = rospy.get_time()
         last_wp_time = 0.0
 
@@ -124,7 +124,7 @@ class WaypointFollower(object):
         end_time = rospy.get_time()
         print("Trajectory executed in", end_time - start_time, "seconds")
         self.publish_zero_vel()
-        self.music_player.stop_playing()
+        # self.music_player.stop_playing()
         return True
 
     def visualise_trajectory(self, waypoints):
