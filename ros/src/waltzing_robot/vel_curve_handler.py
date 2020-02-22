@@ -317,8 +317,8 @@ class VelCurveHandler(object):
             vel = data['vel'] + (sign * self.max_acc)
         if time_duration < data['acc_time']: # accelerate
             vel = self.max_acc * time_duration
-        elif time_duration > data['time'] - data['acc_time']: # decelerate
-            vel -= self.max_acc * (time_duration - data['time'] + data['acc_time'])
+        elif time_duration > data['time'] - data['dec_time']: # decelerate
+            vel -= self.max_acc * (time_duration - data['time'] + data['dec_time'])
         # print('vel', vel)
         # print('omega', omega)
         # print(vel * math.cos(omega), vel * math.sin(omega), data['theta']/data['time'])

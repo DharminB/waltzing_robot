@@ -41,6 +41,8 @@ class TrapezoidVelocityCalculator(object):
         :returns: list of dict (each dict has keys 'vel', 't_acc', 't_const_vel' and 't_dec')
 
         """
+        if distance == 0.0 and time > 0.0:
+            return [{'vel': 0.0, 't_acc': 0.0, 't_const_vel': time, 't_dec': 0.0}]
         vel_range_queue = [{'v_start': self.v_min, 'v_stop': self.v_max}]
         vel_answer_candidates = []
 
