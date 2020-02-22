@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import os
+import yaml
 import rospy
 import traceback
 
@@ -16,14 +17,24 @@ class MetaWPExecutor(object):
 
     def __init__(self):
         self._wp_follower = WaypointFollower()
-        self.waypoint_config_files = rospy.get_param('~waypoint_config_files', None)
         scripts_dir = os.path.abspath(os.path.dirname(__file__))
         main_dir = os.path.dirname(scripts_dir)
         self._waypoints_folder_path = os.path.join(main_dir, 'config/waypoints')
+        self._meta_waypoints_folder_path = os.path.join(main_dir, 'config/meta_waypoints')
         self._in_motion = False
 
-    def execute_meta_wp_trajectory(self):
-        for wp_config in self.waypoint_config_files:
+        trigger_sub = rospy.Subscriber('~meta_wp_file_name', String, self.trigger_cb)
+
+    def execute_meta_wp_trajectory(self, meta_wp_config_file_name='meta_test'):
+        # read meta config file
+        meta_wp_config_file = os.path.join(self._meta_waypoints_folder_path,
+                                           meta_wp_config_file_name + '.yaml')
+        with open(meta_wp_config_file, 'r') as file_obj:
+            data = yaml.safe_load(file_obj)
+        waypoint_config_files = data.get('waypoint_config_files', [])
+
+        # iterate over config files and execute each one
+        for wp_config in waypoint_config_files:
             waypoint_config_filename = os.path.join(self._waypoints_folder_path,
                                                     wp_config + '.yaml')
             print("\n"*3, "Starting", wp_config, "\n"*3)
@@ -38,7 +49,15 @@ class MetaWPExecutor(object):
 
             print("\n"*3, "Finished", "\n"*3)
 
+        self._in_motion = False
+
+    def trigger_cb(self, msg):
+        if self._in_motion:
+            rospy.logwarn("Robot in motion. Ignoring request")
+            return
+        self.execute_meta_wp_trajectory(msg.data)
+
 if __name__ == "__main__":
     rospy.init_node('meta_wp_executor')
     MWPE = MetaWPExecutor()
-    MWPE.execute_meta_wp_trajectory()
+    rospy.spin()

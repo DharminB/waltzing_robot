@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="meta_wp_config" default="meta_test.yaml" />
-
     <node pkg="waltzing_robot" name="meta_wp_executor" type="meta_wp_executor" output="screen">
 
         <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
@@ -18,9 +16,6 @@
         <param name="max_acc" type="double" value="1.0" />
         <param name="max_dec" type="double" value="5.0" />
         <param name="allow_unsafe_transition" type="bool" value="true" />
-
-        <rosparam command="load"
-                  file="$(find waltzing_robot)/ros/config/meta_waypoints/$(arg meta_wp_config)" />
 
     </node>
 </launch>
