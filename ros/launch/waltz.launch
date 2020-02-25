@@ -8,10 +8,11 @@
     <!-- <arg name="wp_config" default="line.yaml" /> -->
     <!-- <arg name="wp_config" default="line_trapezoid.yaml" /> -->
     <!-- <arg name="wp_config" default="line_trapezoid_small.yaml" /> -->
+    <arg name="wp_config" default="infinity.yaml" />
     <!-- <arg name="wp_config" default="back_and_forth.yaml" /> -->
     <!-- <arg name="wp_config" default="square.yaml" /> -->
     <!-- <arg name="wp_config" default="square_trapezoid.yaml" /> -->
-    <arg name="wp_config" default="triangle.yaml" />
+    <!-- <arg name="wp_config" default="triangle.yaml" /> -->
     <!-- <arg name="wp_config" default="spline.yaml" /> -->
     <!-- <arg name="wp_config" default="spline_trapezoid.yaml" /> -->
     <!-- <arg name="wp_config" default="supereclipse_trapezoid.yaml" /> -->
@@ -19,14 +20,15 @@
 
     <node pkg="waltzing_robot" name="waltzer" type="waltzer" output="screen">
 
-        <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" />
+        <!-- <param name="cmd_vel_topic" type="str" value="/ropod/cmd_vel" /> -->
+        <param name="cmd_vel_topic" type="str" value="/load/cmd_vel" />
         <!-- <param name="cmd_vel_topic" type="str" value="/cmd_vel" /> -->
 
-        <!-- <param name="localisation_topic" type="str" value="/fake_localisation" /> -->
-        <param name="odom_topic" type="str" value="/ropod/odom_incomplete" />
+        <param name="localisation_topic" type="str" value="/amcl_pose" />
+        <!-- <param name="odom_topic" type="str" value="/ropod/odom_incomplete" /> -->
         <!-- <param name="odom_topic" type="str" value="/odom" /> -->
 
-        <param name="frame" type="str" value="/odom" />
+        <param name="frame" type="str" value="/map" />
 
         <param name="sleep_duration" type="double" value="0.1" />
         <param name="max_vel" type="double" value="2.0" />

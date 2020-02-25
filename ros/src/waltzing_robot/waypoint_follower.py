@@ -7,7 +7,7 @@ import math
 import copy
 import yaml
 
-from geometry_msgs.msg import Twist, PoseArray
+from geometry_msgs.msg import Twist, PoseArray, PoseWithCovarianceStamped
 from visualization_msgs.msg import MarkerArray
 from nav_msgs.msg import Odometry
 
@@ -24,6 +24,7 @@ class WaypointFollower(object):
         # read ros param
         cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
         odom_topic = rospy.get_param('~odom_topic', '/odom')
+        localisation_topic = rospy.get_param('~localisation_topic', '/odom')
         self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
         self.frame = rospy.get_param('~frame', 'odom')
         music_file_name = rospy.get_param('~music_file_name', None)
@@ -43,7 +44,8 @@ class WaypointFollower(object):
         self._waypoints_marker_pub = rospy.Publisher('~waypoints_marker', MarkerArray, queue_size=1)
 
         # subscribers
-        self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
+        # self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
+        self._localisation_sub = rospy.Subscriber(localisation_topic, PoseWithCovarianceStamped, self._odom_cb)
         
         rospy.sleep(1) # sleep to initialise publishers completely
 

@@ -321,6 +321,7 @@ class VelCurveHandler(object):
             vel = self.max_acc * time_duration
         elif time_duration > data['time'] - data['dec_time']: # decelerate
             vel -= self.max_acc * (time_duration - data['time'] + data['dec_time'])
+        vel = min(vel, self.max_vel)
         # print('vel', vel)
         # print('omega', omega)
         # print(vel * math.cos(omega), vel * math.sin(omega), data['theta']/data['time'])
