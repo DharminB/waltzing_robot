@@ -44,8 +44,8 @@ class WaypointFollower(object):
         self._waypoints_marker_pub = rospy.Publisher('~waypoints_marker', MarkerArray, queue_size=1)
 
         # subscribers
-        # self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
-        self._localisation_sub = rospy.Subscriber(localisation_topic, PoseWithCovarianceStamped, self._odom_cb)
+        self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
+        # self._localisation_sub = rospy.Subscriber(localisation_topic, PoseWithCovarianceStamped, self._odom_cb)
         
         rospy.sleep(1) # sleep to initialise publishers completely
 
