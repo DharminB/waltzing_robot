@@ -25,18 +25,18 @@ waypoints:
       theta: 0.0
       time: 9.0
     - x: 0.1
-      y: 0.1
+      y: 0.0
       theta: 0.0
       time: 10.0
     - x: 0.1
-      y: 0.1
+      y: 0.0
       theta: 0.0
       time: 10.5
-    - x: 0.0
+    - x: 0.2
       y: 0.0
       theta: 0.0
       time: 11.5
-    - x: 0.0
+    - x: 0.2
       y: 0.0
       theta: 0.0
       time: 12.0
