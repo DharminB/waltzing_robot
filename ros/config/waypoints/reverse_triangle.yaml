@@ -3,33 +3,37 @@ waypoints:
     - x: -0.5
       y: -0.5
       theta: 1.57
-      time: 2.0
+      time: 1.9
       control_points:
           - x: -0.5
             y: 0.0
     - x: -1.0
       y: 0.0
       theta: 3.14
-      time: 4.0
+      time: 3.8
       control_points:
           - x: -0.5
             y: 0.0
     - x: -0.7
       y: 0
       theta: -1.05
-      time: 5.2
+      time: 4.9
     - x: -0.7
       y: 0
       theta: -1.05
-      time: 5.5
+      time: 5.2
     - x: -0.4
       y: 0.0
       theta: 1.04
-      time: 6.7
+      time: 6.5
     - x: -0.4
       y: 0.0
       theta: 1.04
-      time: 7.0
+      time: 6.8
+    - x: 0.0
+      y: 0.0
+      theta: 3.14
+      time: 8.0
     - x: 0.0
       y: 0.0
       theta: 3.14
