@@ -1,0 +1,10 @@
+default_vel_curve: 'trapezoid'
+waypoints:
+    - x: -0.75
+      y: 0.0
+      theta: 3.14
+      time: 2.0
+    - x: -1.5
+      y: 0.0
+      theta: 6.27
+      time: 4.0

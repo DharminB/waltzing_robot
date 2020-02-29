@@ -11,6 +11,8 @@ waypoint_config_files:
     - standstill
     # ending 1 (1:44 - 1:57)
     - ending_1
+    - standstill
+    - standstill
     # triangles (1:58 - 2:35)
     - standstill
     - standstill
@@ -29,6 +31,7 @@ waypoint_config_files:
     # ending 2 (3:08 - 3:11)
     - ending_2
     # triangles (3:12 - 3:49)
+    - standstill_half
     - standstill
     - standstill
     - standstill
@@ -36,6 +39,7 @@ waypoint_config_files:
     - reverse_triangle
     - triangle
     - reverse_triangle
+    - standstill
     - standstill
     # medium (3:50 - 4:27)
     - standstill
@@ -53,6 +57,7 @@ waypoint_config_files:
     - circle_reverse_fast
     - circle_reverse_fast
     - forward_while_rotating
+    - standstill_half
     # second medium (5:01 - 5:17)
     - quarter_supereclipse
     - quarter_supereclipse_sharp
