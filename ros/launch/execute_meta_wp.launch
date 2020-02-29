@@ -11,7 +11,7 @@
 
         <param name="frame" type="str" value="/odom" />
 
-        <param name="sleep_duration" type="double" value="0.1" />
+        <param name="sleep_duration" type="double" value="0.05" />
         <param name="max_vel" type="double" value="2.0" />
         <param name="max_acc" type="double" value="5.0" />
         <param name="max_dec" type="double" value="5.0" />

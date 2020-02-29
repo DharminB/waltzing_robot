@@ -32,11 +32,11 @@ waypoint_config_files:
     - standstill
     - standstill
     - standstill
+    - triangle
+    - reverse_triangle
+    - triangle
+    - reverse_triangle
     - standstill
-    - triangle
-    - reverse_triangle
-    - triangle
-    - reverse_triangle
     # medium (3:50 - 4:27)
     - standstill
     - standstill_half
