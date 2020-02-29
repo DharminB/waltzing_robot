@@ -53,15 +53,14 @@ waypoint_config_files:
     - circle_reverse_fast
     - circle_reverse_fast
     - forward_while_rotating
-    # second medium and fast
-    - start_4
-    - start_4
-    - start_4
-    - start_4
-    - start_4
-    - standstill
-    - standstill
-    - standstill
+    # second medium (5:01 - 5:17)
+    - quarter_supereclipse
+    - quarter_supereclipse_sharp
+      # second fast (5:18 - 5:33)
+    - circle_reverse_fast
+    - circle_reverse_fast
+    - circle_reverse_fast
+    - forward_while_rotating
     # start 4 (5:34 - 5:38)
     - start_4
     # rotate and sidways (5:39 - 6:14)
