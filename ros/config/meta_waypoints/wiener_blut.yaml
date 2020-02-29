@@ -1,11 +1,17 @@
 waypoint_config_files:
+    # infinity (0:24 - 1:43)
     - infinity_first_half
     - infinity_second_half
     - infinity_first_half_slow
     - infinity_second_half_slow
     - circle_reverse
     - circle_reverse
+    - standstill
+    - standstill
+    - standstill
+    # ending 1 (1:44 - 1:57)
     - ending_1
+    # triangles (1:58 - 2:35)
     - standstill
     - standstill
     - standstill
@@ -14,13 +20,16 @@ waypoint_config_files:
     - reverse_triangle
     - triangle
     - reverse_triangle
+    # zig zag (2:36 - 3:07)
     - zigzag_backward
     - rotate_180_degree
     - standstill_half
     - zigzag_forward
     - rotate_180_degree
     - standstill_half
+      # ending 2 (3:08 - 3:11)
     - ending_2
+      # triangles (3:12 - 3:49)
     - standstill
     - standstill
     - standstill
@@ -29,7 +38,32 @@ waypoint_config_files:
     - reverse_triangle
     - triangle
     - reverse_triangle
-    - medium_fast
+      # medium
+    - standstill
+    - standstill_small
+    - quarter_supereclipse
+    - quarter_supereclipse_sharp
+    - quarter_supereclipse
+    - quarter_supereclipse_sharp
+      # fast
+    - circle_reverse_fast
+    - circle_reverse_fast
+    - circle_reverse_fast
+    - forward_while_rotating
+    - circle_reverse_fast
+    - circle_reverse_fast
+    - circle_reverse_fast
+    - forward_while_rotating
+      # second medium and fast
+    - start_4
+    - start_4
+    - start_4
+    - start_4
+    - start_4
+    - standstill
+    - standstill
+    - standstill
+      # start 4
     - start_4
     - standstill
     - standstill

@@ -3,7 +3,7 @@ waypoints:
   - x: 2.0
     y: 0.0
     theta: 3.14
-    time: 14.5
+    time: 11.0
     vel_curve: trapezoid
     control_points: 
         - x: 0.0
@@ -12,21 +12,3 @@ waypoints:
           y: 1.5
         - x: 2.0
           y: 1.0
-  # - x: -2.01
-  #   y: 0.013
-  #   theta: 3.142
-  #   time: 8.0
-  #   vel_curve: trapezoid
-  #   control_points: [{'y': 0.9922294616699219, 'x': -2.003465414047241}]
-  # - x: -1.005
-  #   y: -0.991
-  #   theta: 1.571
-  #   time: 12.0
-  #   vel_curve: trapezoid
-  #   control_points: [{'y': -1.005678653717041, 'x': -1.9967609643936157}]
-  # - x: -0.013
-  #   y: 0.013
-  #   theta: -0.007
-  #   time: 16.0
-  #   vel_curve: trapezoid
-  #   control_points: [{'y': -0.9452930688858032, 'x': -0.046548131853342056}]
