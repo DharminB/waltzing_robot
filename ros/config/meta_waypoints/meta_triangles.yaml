@@ -1,4 +1,7 @@
 waypoint_config_files:
+    - standstill
+    - standstill
+    - standstill
     - triangle
     - reverse_triangle
     - triangle

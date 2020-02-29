@@ -15,7 +15,6 @@ waypoint_config_files:
     - standstill
     - standstill
     - standstill
-    - standstill
     - triangle
     - reverse_triangle
     - triangle
@@ -27,9 +26,9 @@ waypoint_config_files:
     - zigzag_forward
     - rotate_180_degree
     - standstill_half
-      # ending 2 (3:08 - 3:11)
+    # ending 2 (3:08 - 3:11)
     - ending_2
-      # triangles (3:12 - 3:49)
+    # triangles (3:12 - 3:49)
     - standstill
     - standstill
     - standstill
@@ -38,14 +37,14 @@ waypoint_config_files:
     - reverse_triangle
     - triangle
     - reverse_triangle
-      # medium
+    # medium (3:50 - 4:27)
     - standstill
-    - standstill_small
+    - standstill_half
     - quarter_supereclipse
     - quarter_supereclipse_sharp
     - quarter_supereclipse
     - quarter_supereclipse_sharp
-      # fast
+    # fast (4:28 - 4:59)
     - circle_reverse_fast
     - circle_reverse_fast
     - circle_reverse_fast
@@ -54,7 +53,7 @@ waypoint_config_files:
     - circle_reverse_fast
     - circle_reverse_fast
     - forward_while_rotating
-      # second medium and fast
+    # second medium and fast
     - start_4
     - start_4
     - start_4
@@ -63,8 +62,9 @@ waypoint_config_files:
     - standstill
     - standstill
     - standstill
-      # start 4
+    # start 4 (5:34 - 5:38)
     - start_4
+    # rotate and sidways (5:39 - 6:14)
     - standstill
     - standstill
     - standstill
@@ -85,6 +85,7 @@ waypoint_config_files:
     - rotate_and_sideways
     - forward_and_backward
     - left_and_right
+    # leaf (6:15 - 7:09)
     - sidestep
     - standstill
     - standstill
@@ -105,6 +106,7 @@ waypoint_config_files:
     - leaf
     - leaf
     - rotate_back
+    # rotate and sidways (7:10 - 7:25)
     - standstill
     - standstill
     - rotate_and_sideways
@@ -114,6 +116,7 @@ waypoint_config_files:
     - rotate_and_sideways
     - forward_and_backward
     - left_and_right 
+      # leaf (7:26 - 7:54)
     - sidestep
     - standstill
     - standstill
@@ -124,4 +127,5 @@ waypoint_config_files:
     - leaf
     - leaf
     - rotate_back
+    # ending 4 (7:55 - 8:01)
     - ending_4

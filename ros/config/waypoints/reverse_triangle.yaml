@@ -1,7 +1,7 @@
 default_vel_curve: 'trapezoid'
 waypoints:
     - x: -0.5
-      y: -1.0
+      y: -0.5
       theta: 1.57
       time: 2.0
       control_points:
