@@ -1,0 +1,11 @@
+waypoint_config_files:
+    - rotate_and_sideways
+    - rotate_and_sideways
+    - rotate_and_sideways
+    - forward_and_backward
+    - rotate_and_sideways
+    - forward_and_backward
+    - left_and_right    
+    - standstill
+    - standstill
+    - standstill_half

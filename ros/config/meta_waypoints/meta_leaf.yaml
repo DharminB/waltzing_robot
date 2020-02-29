@@ -1,0 +1,11 @@
+waypoint_config_files:
+    - sidestep
+    - standstill
+    - standstill
+    - standstill
+    - standstill
+    - standstill_quarter
+    - leaf
+    - leaf
+    - leaf
+    - rotate_back

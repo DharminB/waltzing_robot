@@ -1,0 +1,18 @@
+default_vel_curve: 'linear'
+waypoints:
+    - x: 0.0
+      y: -0.25
+      theta: 0.0
+      time: 0.625
+    - x: 0.0
+      y: 0.0
+      theta: 0.0
+      time: 1.25
+    - x: 0.0
+      y: 0.25
+      theta: 0.0
+      time: 1.875
+    - x: 0.0
+      y: 0.0
+      theta: 0.0
+      time: 2.5

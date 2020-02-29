@@ -1,0 +1,7 @@
+waypoint_config_files:
+    - zigzag_backward
+    - rotate_180_degree
+    - standstill_half
+    - zigzag_forward
+    - rotate_180_degree
+    - standstill_half
