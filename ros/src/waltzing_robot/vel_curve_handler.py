@@ -327,7 +327,21 @@ class VelCurveHandler(object):
 
         total_remaining_ang_distance = abs(Utils.get_shortest_angle(data['end_wp'][2], current_position[2]))
         total_remaining_time = data['time'] - time_duration
-        req_vel = total_remaining_distance / total_remaining_time
+
+        deteminant = total_remaining_time**2 - ((2 / self.max_dec) * total_remaining_distance)
+        if deteminant > 0.0:
+            req_vel_1 = self.max_dec * (total_remaining_time + deteminant**0.5)
+            req_vel_2 = self.max_dec * (total_remaining_time - deteminant**0.5)
+            print('req_vel_1', req_vel_1)
+            print('req_vel_2', req_vel_2)
+            if total_remaining_time > req_vel_1/self.max_dec:
+                req_vel = req_vel_1
+            elif total_remaining_time > req_vel_2/self.max_dec:
+                req_vel = req_vel_2
+            else:
+                req_vel = data['vel']
+        else:
+            req_vel = total_remaining_distance / total_remaining_time
         req_ang_vel = total_remaining_ang_distance / total_remaining_time
         if total_remaining_time < 0.1: # if no time left, dont bother correcting
             req_vel = data['vel']
