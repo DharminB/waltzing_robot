@@ -15,6 +15,9 @@ class VelCurveHandler(object):
     :max_vel: float
     :max_acc: float
     :max_dec: float
+    :max_ang_vel: float
+    :max_ang_acc: float
+    :max_ang_dec: float
     
     """
 
@@ -22,12 +25,18 @@ class VelCurveHandler(object):
         self.max_vel = kwargs.get('max_vel', float('inf'))
         self.max_acc = kwargs.get('max_acc', float('inf'))
         self.max_dec = kwargs.get('max_dec', float('inf'))
+        self.max_ang_vel = kwargs.get('max_ang_vel', float('inf'))
+        self.max_ang_acc = kwargs.get('max_ang_acc', float('inf'))
+        self.max_ang_dec = kwargs.get('max_ang_dec', float('inf'))
         self.curve_point_distance_tolerance = 0.05
         self.trajectory_data_list = list()
         self.trajectory_index = 0
         self.traj_vel_calc = TrapezoidVelocityCalculator(max_acc=self.max_acc,
                                                          max_dec=self.max_dec,
                                                          max_vel=self.max_vel)
+        self.traj_ang_vel_calc = TrapezoidVelocityCalculator(max_acc=self.max_ang_acc,
+                                                         max_dec=self.max_ang_dec,
+                                                         max_vel=self.max_ang_vel)
 
         self.allow_unsafe_transition = kwargs.get('allow_unsafe_transition', True)
         tos_radius = kwargs.get('turn_on_spot_radius', 0.1) # turn on spot radius
@@ -44,6 +53,9 @@ class VelCurveHandler(object):
         string += 'max_vel: ' + str(self.max_vel) + '\n'
         string += 'max_acc: ' + str(self.max_acc) + '\n'
         string += 'max_dec: ' + str(self.max_dec) + '\n'
+        string += 'max_ang_vel: ' + str(self.max_ang_vel) + '\n'
+        string += 'max_ang_acc: ' + str(self.max_ang_acc) + '\n'
+        string += 'max_ang_dec: ' + str(self.max_ang_dec) + '\n'
         string += 'trajectory_data_list: ' + str(self.trajectory_data_list)
         return string
 
@@ -230,11 +242,11 @@ class VelCurveHandler(object):
         data['vel_curve'] = end_wp.vel_curve
         data['theta'] = Utils.get_shortest_angle(end_wp.theta, start_wp.theta)
         data['time'] = end_wp.time - start_wp.time
+        data['end_wp'] = (end_wp.x, end_wp.y, end_wp.theta)
         dist = 0
         if end_wp.control_points is None:
             data['delta_x'] = end_wp.x - start_wp.x
             data['delta_y'] = end_wp.y - start_wp.y
-            data['end_wp'] = (end_wp.x, end_wp.y, end_wp.theta)
             # data['vel'] = Utils.get_distance(data['delta_x'], data['delta_y'])/data['time']
             dist = Utils.get_distance(data['delta_x'], data['delta_y'])
         else:
@@ -263,6 +275,17 @@ class VelCurveHandler(object):
         data['acc_time'] = desired_vel['t_acc']
         data['const_vel_time'] = desired_vel['t_const_vel']
         data['dec_time'] = desired_vel['t_dec']
+
+        desired_ang_vel_list = self.traj_ang_vel_calc.calc_desired_vel(distance=abs(data['theta']), time=data['time'])
+        if len(desired_ang_vel_list) == 0:
+            print("No angular velocity solution found")
+            return None
+
+        desired_ang_vel = desired_ang_vel_list[0]
+        data['ang_vel'] = desired_ang_vel['vel']
+        data['ang_acc_time'] = desired_ang_vel['t_acc']
+        data['const_ang_vel_time'] = desired_ang_vel['t_const_vel']
+        data['ang_dec_time'] = desired_ang_vel['t_dec']
         return data
 
     def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
@@ -272,8 +295,6 @@ class VelCurveHandler(object):
         # print(current_position)
         # print(data['curve_points'][data['curve_point_index']])
         # print(data)
-        if data['vel'] == 0.0:
-            return (0.0, 0.0, 0.0)
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
         if 'curve_points' in data:
@@ -303,28 +324,57 @@ class VelCurveHandler(object):
                     data['end_wp'][:2])
             if total_remaining_distance < self.curve_point_distance_tolerance:
                 total_remaining_distance = 0.0
+
+        total_remaining_ang_distance = abs(Utils.get_shortest_angle(data['end_wp'][2], current_position[2]))
         total_remaining_time = data['time'] - time_duration
         req_vel = total_remaining_distance / total_remaining_time
+        req_ang_vel = total_remaining_ang_distance / total_remaining_time
         if total_remaining_time < 0.2: # if no time left, dont bother correcting
             req_vel = data['vel']
+            req_ang_vel = data['ang_vel']
 
         # print('req_vel', req_vel)
         # print('total_remaining_distance', total_remaining_distance)
+        # print('req_ang_vel', req_ang_vel)
+        # print('total_remaining_ang_distance', total_remaining_ang_distance)
         # print('total_remaining_time', total_remaining_time)
+
         vel = data['vel']
-        if abs(req_vel - data['vel']) <= self.max_acc:
-            vel = req_vel
+        # take care of acc and dec limits
+        if req_vel > data['vel']:
+            vel = req_vel if req_vel - data['vel'] <= self.max_acc else data['vel'] + self.max_acc
         else:
-            sign = 1 if req_vel > data['vel'] else -1
-            vel = data['vel'] + (sign * self.max_acc)
+            vel = req_vel if data['vel'] - req_vel <= self.max_dec else data['vel'] - self.max_dec
+
         if time_duration < data['acc_time']: # accelerate
             vel = self.max_acc * time_duration
         elif time_duration > data['time'] - data['dec_time']: # decelerate
-            vel -= self.max_acc * (time_duration - data['time'] + data['dec_time'])
+            vel -= self.max_dec * (time_duration - data['time'] + data['dec_time'])
         vel = min(vel, self.max_vel)
+
+        if data['vel'] == 0.0: # if no linear movement are required dont't move (needed because of position error)
+            vel = 0.0
+
+        ang_vel = data['ang_vel']
+        # take care of acc and dec limits
+        if req_ang_vel > data['ang_vel']:
+            ang_vel = req_ang_vel if req_ang_vel - data['ang_vel'] <= self.max_ang_acc else data['ang_vel'] + self.max_ang_acc
+        else:
+            ang_vel = req_ang_vel if data['ang_vel'] - req_ang_vel <= self.max_ang_dec else data['ang_vel'] - self.max_ang_dec
+
+        if time_duration < data['ang_acc_time']: # accelerate
+            ang_vel = self.max_ang_acc * time_duration
+        elif time_duration > data['time'] - data['ang_dec_time']: # decelerate
+            ang_vel -= self.max_ang_dec * (time_duration - data['time'] + data['ang_dec_time'])
+        ang_vel = min(ang_vel, self.max_ang_vel)
+
+        ang_vel_sign = -1 if data['theta'] < 0.0 else 1
+
+        if data['ang_vel'] == 0.0: # if no angular movement are required dont't move
+            ang_vel = 0.0
+
         # print('vel', vel)
         # print('omega', omega)
-        # print(vel * math.cos(omega), vel * math.sin(omega), data['theta']/data['time'])
-        return (vel * math.cos(omega),
-                vel * math.sin(omega),
-                data['theta']/data['time'])
+        # print(vel * math.cos(omega), vel * math.sin(omega), ang_vel_sign*ang_vel)
+
+        return (vel * math.cos(omega), vel * math.sin(omega), ang_vel_sign*ang_vel)
