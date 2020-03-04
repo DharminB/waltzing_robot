@@ -329,7 +329,7 @@ class VelCurveHandler(object):
         total_remaining_time = data['time'] - time_duration
         req_vel = total_remaining_distance / total_remaining_time
         req_ang_vel = total_remaining_ang_distance / total_remaining_time
-        if total_remaining_time < 0.2: # if no time left, dont bother correcting
+        if total_remaining_time < 0.1: # if no time left, dont bother correcting
             req_vel = data['vel']
             req_ang_vel = data['ang_vel']
 

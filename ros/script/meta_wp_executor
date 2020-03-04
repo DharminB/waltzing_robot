@@ -19,7 +19,7 @@ class MetaWPExecutor(object):
         self._wp_follower = WaypointFollower()
         scripts_dir = os.path.abspath(os.path.dirname(__file__))
         main_dir = os.path.dirname(scripts_dir)
-        self._waypoints_folder_path = os.path.join(main_dir, 'config/waypoints')
+        self._waypoints_folder_path = os.path.join(main_dir, 'config/waypoints/wiener_blut')
         self._meta_waypoints_folder_path = os.path.join(main_dir, 'config/meta_waypoints')
         self._in_motion = False
 

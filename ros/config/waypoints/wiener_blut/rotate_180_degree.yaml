@@ -1,4 +1,4 @@
-default_vel_curve: 'linear'
+default_vel_curve: 'trapezoid'
 waypoints:
     - x: 0.0
       y: 0.0
