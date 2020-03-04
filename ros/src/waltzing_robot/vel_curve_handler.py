@@ -332,8 +332,8 @@ class VelCurveHandler(object):
         if deteminant > 0.0:
             req_vel_1 = self.max_dec * (total_remaining_time + deteminant**0.5)
             req_vel_2 = self.max_dec * (total_remaining_time - deteminant**0.5)
-            print('req_vel_1', req_vel_1)
-            print('req_vel_2', req_vel_2)
+            # print('req_vel_1', req_vel_1)
+            # print('req_vel_2', req_vel_2)
             if total_remaining_time > req_vel_1/self.max_dec:
                 req_vel = req_vel_1
             elif total_remaining_time > req_vel_2/self.max_dec:
