@@ -8,7 +8,8 @@
     <!-- <arg name="wp_config" default="line.yaml" /> -->
     <!-- <arg name="wp_config" default="line_trapezoid.yaml" /> -->
     <!-- <arg name="wp_config" default="line_trapezoid_small.yaml" /> -->
-    <arg name="wp_config" default="infinity.yaml" />
+    <!-- <arg name="wp_config" default="infinity.yaml" /> -->
+    <arg name="wp_config" default="wiener_blut/triangle.yaml" />
     <!-- <arg name="wp_config" default="back_and_forth.yaml" /> -->
     <!-- <arg name="wp_config" default="square.yaml" /> -->
     <!-- <arg name="wp_config" default="square_trapezoid.yaml" /> -->

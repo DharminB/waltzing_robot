@@ -55,7 +55,7 @@ class WaypointFollower(object):
     def _odom_cb(self, msg):
         self.current_position = Utils.get_x_y_theta_from_pose(msg.pose.pose)
 
-    def _load_waypoint_config_file(self, waypoint_config_filename=None):
+    def load_waypoint_config_file(self, waypoint_config_filename=None):
         """Load waypoint config file and return Waypoints obj
 
         :waypoint_config_filename: str
@@ -72,15 +72,20 @@ class WaypointFollower(object):
             rospy.logerr("File could not be read!")
             return None
 
-    def follow_waypoints(self, waypoint_config_filename=None, visualise_trajectory=True):
+    def follow_waypoints(self, waypoint_config_filename=None, waypoints_obj=None, visualise_trajectory=True):
         """Follow waypoints defined by class variable with their vel curve motion
         Returns true if the whole trajectory was executed completely
 
+        :waypoint_config_filename: string (path of wp config file)
+        :waypoints_obj: Waypoints
+        :visualise_trajectory: bool
         :returns: bool
 
         """
-        # read waypoints from file
-        waypoints_obj = self._load_waypoint_config_file(waypoint_config_filename)
+        if waypoints_obj is None:
+            # read waypoints from file
+            waypoints_obj = self.load_waypoint_config_file(waypoint_config_filename)
+
         if waypoints_obj is None:
             return False
 
