@@ -90,7 +90,16 @@ waypoint_config_files:
     - forward_and_backward
     - left_and_right
     # leaf (6:15 - 7:09)
-    - sidestep
+    - large_leaf
+    - standstill
+    - standstill
+    - standstill
+    - leaf
+    - leaf
+    - leaf
+    - rotate_back
+    - large_leaf
+    - standstill
     - standstill
     - standstill
     - standstill
@@ -100,17 +109,7 @@ waypoint_config_files:
     - leaf
     - leaf
     - rotate_back
-    - sidestep
-    - standstill
-    - standstill
-    - standstill
-    - standstill
-    - standstill_quarter
-    - leaf
-    - leaf
-    - leaf
-    - rotate_back
-    # rotate and sidways (7:10 - 7:25)
+    # rotate and sideways (7:10 - 7:25)
     - standstill
     - standstill
     - rotate_and_sideways
@@ -121,7 +120,8 @@ waypoint_config_files:
     - forward_and_backward
     - left_and_right 
       # leaf (7:26 - 7:54)
-    - sidestep
+    - large_leaf
+    - standstill
     - standstill
     - standstill
     - standstill

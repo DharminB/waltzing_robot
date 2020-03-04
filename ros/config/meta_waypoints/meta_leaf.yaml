@@ -1,5 +1,6 @@
 waypoint_config_files:
-    - sidestep
+    - large_leaf
+    - standstill
     - standstill
     - standstill
     - standstill
@@ -9,3 +10,22 @@ waypoint_config_files:
     - leaf
     - leaf
     - rotate_back
+    #- large_leaf
+    #- standstill
+    #- standstill
+    #- standstill
+    #- leaf
+    #- leaf
+    #- leaf
+    #- rotate_back
+    #- large_leaf
+    #- standstill
+    #- standstill
+    #- standstill
+    #- standstill
+    #- standstill
+    #- standstill_quarter
+    #- leaf
+    #- leaf
+    #- leaf
+    #- rotate_back
