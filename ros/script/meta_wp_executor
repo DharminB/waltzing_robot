@@ -9,7 +9,9 @@ import traceback
 
 from std_msgs.msg import String
 
+from waltzing_robot.waypoints import Waypoints, Waypoint
 from waltzing_robot.waypoint_follower import WaypointFollower
+from waltzing_robot.utils import Utils
 
 class MetaWPExecutor(object):
 
@@ -23,6 +25,7 @@ class MetaWPExecutor(object):
         self._meta_waypoints_folder_path = os.path.join(main_dir, 'config/meta_waypoints')
         self._in_motion = False
 
+        self.use_global_pose = rospy.get_param('~use_global_pose', True)
         trigger_sub = rospy.Subscriber('~meta_wp_file_name', String, self.trigger_cb)
         rospy.loginfo('Initialised')
 
@@ -34,21 +37,51 @@ class MetaWPExecutor(object):
             data = yaml.safe_load(file_obj)
         waypoint_config_files = data.get('waypoint_config_files', [])
 
-        # iterate over config files and execute each one
-        for wp_config in waypoint_config_files:
-            waypoint_config_filename = os.path.join(self._waypoints_folder_path,
-                                                    wp_config + '.yaml')
+        if self.use_global_pose:
+            start_pose = (0.0, 0.0, 0.0)
+            start_time = 0.0
+            full_waypoints_obj = Waypoints()
+            # iterate over config files and append waypoints to Waypoints obj
+            for wp_config in waypoint_config_files:
+                waypoint_config_filename = os.path.join(self._waypoints_folder_path,
+                                                        wp_config + '.yaml')
+                waypoints_obj = self._wp_follower.load_waypoint_config_file(waypoint_config_filename)
+                for wp in waypoints_obj.waypoints:
+                    wp.shift(*start_pose)
+                    wp.time += start_time
+                full_waypoints_obj.waypoints.extend(waypoints_obj.waypoints)
+                last_wp = full_waypoints_obj.waypoints[-1]
+                start_pose = (last_wp.x, last_wp.y, last_wp.theta)
+                start_time = last_wp.time
+            print(full_waypoints_obj)
+
             print("\n"*3, "Starting", wp_config, "\n"*3)
             self._in_motion = True
 
             try:
-                self._wp_follower.follow_waypoints(waypoint_config_filename)
+                self._wp_follower.follow_waypoints(waypoints_obj=full_waypoints_obj)
             except Exception as e:
                 rospy.logerr(str(e))
                 traceback.print_exc()
                 self._wp_follower.publish_zero_vel()
 
-            print("\n"*3, "Finished", "\n"*3)
+            print("\n"*2, "Finished", wp_config, "\n"*2)
+        else:
+            # iterate over config files and execute each one
+            for wp_config in waypoint_config_files:
+                waypoint_config_filename = os.path.join(self._waypoints_folder_path,
+                                                        wp_config + '.yaml')
+                print("\n"*3, "Starting", wp_config, "\n"*3)
+                self._in_motion = True
+
+                try:
+                    self._wp_follower.follow_waypoints(waypoint_config_filename)
+                except Exception as e:
+                    rospy.logerr(str(e))
+                    traceback.print_exc()
+                    self._wp_follower.publish_zero_vel()
+
+                print("\n"*2, "Finished", wp_config, "\n"*2)
 
         self._in_motion = False
 
