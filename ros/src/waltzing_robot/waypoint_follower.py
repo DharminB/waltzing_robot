@@ -43,6 +43,9 @@ class WaypointFollower(object):
                 control_rate=self.control_rate,
                 allow_unsafe_transition=rospy.get_param('~allow_unsafe_transition', True))
         self.current_position = (0.0, 0.0, 0.0)
+        self.current_vel = (0.0, 0.0, 0.0)
+        self.plot_vel = True
+        self.vel_data = []
 
         # publishers
         self._cmd_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=1)
@@ -112,8 +115,8 @@ class WaypointFollower(object):
             rospy.logwarn("Impossible trajectory encountered. Giving up.")
             return False
 
-        if visualise_trajectory:
-            self.visualise_trajectory(waypoints)
+        # if visualise_trajectory:
+        #     self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
         # self.music_player.start_playing()
         start_time = rospy.get_time()
@@ -135,11 +138,18 @@ class WaypointFollower(object):
                 # print(x, y, theta)
                 self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
 
+                if self.plot_vel:
+                    self.vel_data.append((x, y, theta))
                 rate.sleep()
             last_wp_time = wp.time
         end_time = rospy.get_time()
         print("Trajectory executed in", end_time - start_time, "seconds")
         self.publish_zero_vel()
+        if self.plot_vel:
+            self.vel_data.append((0.0, 0.0, 0.0))
+            with open('/tmp/waltz_vel_data.yaml', 'w') as file_obj:
+                yaml.safe_dump(self.vel_data, file_obj)
+            self.vel_data = []
         # self.music_player.stop_playing()
         return True
 
@@ -196,4 +206,3 @@ class WaypointFollower(object):
 
     def publish_zero_vel(self):
         self._cmd_vel_pub.publish(self._get_twist())
-
