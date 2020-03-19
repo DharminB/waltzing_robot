@@ -28,15 +28,19 @@ class VelCurveHandler(object):
         self.max_ang_vel = kwargs.get('max_ang_vel', float('inf'))
         self.max_ang_acc = kwargs.get('max_ang_acc', float('inf'))
         self.max_ang_dec = kwargs.get('max_ang_dec', float('inf'))
+        self.velocity_scaling_factor = kwargs.get('velocity_scaling_factor', 0.9)
+        self.control_rate = kwargs.get('control_rate', 10.0)
         self.curve_point_distance_tolerance = 0.05
         self.trajectory_data_list = list()
         self.trajectory_index = 0
-        self.traj_vel_calc = TrapezoidVelocityCalculator(max_acc=self.max_acc,
-                                                         max_dec=self.max_dec,
-                                                         max_vel=self.max_vel)
-        self.traj_ang_vel_calc = TrapezoidVelocityCalculator(max_acc=self.max_ang_acc,
-                                                         max_dec=self.max_ang_dec,
-                                                         max_vel=self.max_ang_vel)
+        self.traj_vel_calc = TrapezoidVelocityCalculator(
+                max_acc=self.max_acc * self.velocity_scaling_factor,
+                max_dec=self.max_dec * self.velocity_scaling_factor,
+                max_vel=self.max_vel * self.velocity_scaling_factor)
+        self.traj_ang_vel_calc = TrapezoidVelocityCalculator(
+                max_acc=self.max_ang_acc * self.velocity_scaling_factor,
+                max_dec=self.max_ang_dec * self.velocity_scaling_factor,
+                max_vel=self.max_ang_vel * self.velocity_scaling_factor)
 
         self.allow_unsafe_transition = kwargs.get('allow_unsafe_transition', True)
         tos_radius = kwargs.get('turn_on_spot_radius', 0.1) # turn on spot radius
@@ -288,7 +292,7 @@ class VelCurveHandler(object):
         data['ang_dec_time'] = desired_ang_vel['t_dec']
         return data
 
-    def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0)):
+    def trapezoid_vel(self, time_duration, current_position=(0.0, 0.0, 0.0), current_vel=(0.0, 0.0, 0.0)):
         data = self.trajectory_data_list[self.trajectory_index]
         # print()
         # print(self.trajectory_index)
@@ -327,6 +331,7 @@ class VelCurveHandler(object):
 
         total_remaining_ang_distance = abs(Utils.get_shortest_angle(data['end_wp'][2], current_position[2]))
         total_remaining_time = data['time'] - time_duration
+        total_remaining_time *= 0.95
 
         deteminant = total_remaining_time**2 - ((2 / self.max_dec) * total_remaining_distance)
         if deteminant > 0.0:
@@ -353,12 +358,15 @@ class VelCurveHandler(object):
         # print('total_remaining_ang_distance', total_remaining_ang_distance)
         # print('total_remaining_time', total_remaining_time)
 
+        current_linear_vel = (current_vel[0]**2 + current_vel[1]**2)**0.5
         vel = data['vel']
         # take care of acc and dec limits
         if req_vel > data['vel']:
-            vel = req_vel if req_vel - data['vel'] <= self.max_acc else data['vel'] + self.max_acc
+            vel = req_vel if req_vel - current_linear_vel <= self.max_acc/self.control_rate \
+                    else current_linear_vel + self.max_acc/self.control_rate
         else:
-            vel = req_vel if data['vel'] - req_vel <= self.max_dec else data['vel'] - self.max_dec
+            vel = req_vel if current_linear_vel - req_vel <= self.max_dec/self.control_rate \
+                    else current_linear_vel - self.max_dec/self.control_rate
 
         if time_duration < data['acc_time']: # accelerate
             vel = self.max_acc * time_duration
@@ -372,9 +380,11 @@ class VelCurveHandler(object):
         ang_vel = data['ang_vel']
         # take care of acc and dec limits
         if req_ang_vel > data['ang_vel']:
-            ang_vel = req_ang_vel if req_ang_vel - data['ang_vel'] <= self.max_ang_acc else data['ang_vel'] + self.max_ang_acc
+            ang_vel = req_ang_vel if req_ang_vel - current_vel[2] <= self.max_ang_acc/self.control_rate \
+                    else current_vel[2] + self.max_ang_acc/self.control_rate
         else:
-            ang_vel = req_ang_vel if data['ang_vel'] - req_ang_vel <= self.max_ang_dec else data['ang_vel'] - self.max_ang_dec
+            ang_vel = req_ang_vel if current_vel[2] - req_ang_vel <= self.max_ang_dec/self.control_rate \
+                    else current_vel[2] - self.max_ang_dec/self.control_rate
 
         if time_duration < data['ang_acc_time']: # accelerate
             ang_vel = self.max_ang_acc * time_duration

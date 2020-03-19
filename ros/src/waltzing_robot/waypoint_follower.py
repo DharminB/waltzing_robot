@@ -25,7 +25,8 @@ class WaypointFollower(object):
         cmd_vel_topic = rospy.get_param('~cmd_vel_topic', '/cmd_vel')
         odom_topic = rospy.get_param('~odom_topic', '/odom')
         localisation_topic = rospy.get_param('~localisation_topic', '/odom')
-        self.sleep_duration = rospy.get_param('~sleep_duration', 0.1)
+        sleep_duration = rospy.get_param('~sleep_duration', 0.1)
+        self.control_rate = 1.0/sleep_duration
         self.frame = rospy.get_param('~frame', 'odom')
         music_file_name = rospy.get_param('~music_file_name', None)
         # self.music_player = MusicPlayer(music_file_name)
@@ -38,6 +39,8 @@ class WaypointFollower(object):
                 max_ang_vel=rospy.get_param('~max_ang_vel', 8.0),
                 max_ang_acc=rospy.get_param('~max_ang_acc', 8.0),
                 max_ang_dec=rospy.get_param('~max_ang_dec', 8.0),
+                velocity_scaling_factor=rospy.get_param('~velocity_scaling_factor', 0.9),
+                control_rate=self.control_rate,
                 allow_unsafe_transition=rospy.get_param('~allow_unsafe_transition', True))
         self.current_position = (0.0, 0.0, 0.0)
 
@@ -54,6 +57,7 @@ class WaypointFollower(object):
 
     def _odom_cb(self, msg):
         self.current_position = Utils.get_x_y_theta_from_pose(msg.pose.pose)
+        self.current_vel = (msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.angular.z)
 
     def load_waypoint_config_file(self, waypoint_config_filename=None):
         """Load waypoint config file and return Waypoints obj
@@ -115,6 +119,7 @@ class WaypointFollower(object):
         start_time = rospy.get_time()
         last_wp_time = 0.0
 
+        rate = rospy.Rate(self.control_rate)
         # iterate over all wp and execute trajectory
         for self._vel_curve_handler.trajectory_index, wp in enumerate(waypoints[1:]):
             print(wp)
@@ -125,11 +130,12 @@ class WaypointFollower(object):
 
                 x, y, theta = self._vel_curve_handler.get_vel(
                         rospy.get_time() - start_time - last_wp_time,
-                        current_position=self.current_position)
+                        current_position=self.current_position,
+                        current_vel=self.current_vel)
                 # print(x, y, theta)
                 self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
 
-                rospy.sleep(self.sleep_duration)
+                rate.sleep()
             last_wp_time = wp.time
         end_time = rospy.get_time()
         print("Trajectory executed in", end_time - start_time, "seconds")
