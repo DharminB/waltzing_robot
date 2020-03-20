@@ -26,7 +26,7 @@ class WaypointFollower(object):
         odom_topic = rospy.get_param('~odom_topic', '/odom')
         localisation_topic = rospy.get_param('~localisation_topic', '/odom')
         sleep_duration = rospy.get_param('~sleep_duration', 0.1)
-        self.control_rate = 1.0/sleep_duration
+        self.control_rate = rospy.get_param('~rate', 10.0)
         self.frame = rospy.get_param('~frame', 'odom')
         music_file_name = rospy.get_param('~music_file_name', None)
         # self.music_player = MusicPlayer(music_file_name)
@@ -56,7 +56,7 @@ class WaypointFollower(object):
         self._odom_sub = rospy.Subscriber(odom_topic, Odometry, self._odom_cb)
         # self._localisation_sub = rospy.Subscriber(localisation_topic, PoseWithCovarianceStamped, self._odom_cb)
         
-        rospy.sleep(1) # sleep to initialise publishers completely
+        rospy.sleep(0.5) # sleep to initialise publishers completely
 
     def _odom_cb(self, msg):
         self.current_position = Utils.get_x_y_theta_from_pose(msg.pose.pose)
@@ -114,15 +114,17 @@ class WaypointFollower(object):
         if not possible:
             rospy.logwarn("Impossible trajectory encountered. Giving up.")
             return False
+        # print(self._vel_curve_handler)
 
-        # if visualise_trajectory:
-        #     self.visualise_trajectory(waypoints)
+        if visualise_trajectory:
+            self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
         # self.music_player.start_playing()
         start_time = rospy.get_time()
         last_wp_time = 0.0
 
         rate = rospy.Rate(self.control_rate)
+        last_commanded_vel = (0.0, 0.0, 0.0)
         # iterate over all wp and execute trajectory
         for self._vel_curve_handler.trajectory_index, wp in enumerate(waypoints[1:]):
             print(wp)
@@ -134,8 +136,9 @@ class WaypointFollower(object):
                 x, y, theta = self._vel_curve_handler.get_vel(
                         rospy.get_time() - start_time - last_wp_time,
                         current_position=self.current_position,
-                        current_vel=self.current_vel)
+                        current_vel=last_commanded_vel)
                 # print(x, y, theta)
+                last_commanded_vel = (x, y, theta)
                 self._cmd_vel_pub.publish(self._get_twist(x, y, theta))
 
                 if self.plot_vel:

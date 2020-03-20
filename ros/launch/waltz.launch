@@ -31,11 +31,11 @@
 
         <param name="frame" type="str" value="/odom" />
 
-        <param name="sleep_duration" type="double" value="0.1" />
+        <param name="rate" type="double" value="10.0" />
         <param name="max_vel" type="double" value="1.5" />
         <param name="max_acc" type="double" value="2.5" />
         <param name="max_dec" type="double" value="2.5" />
-        <param name="max_ang_vel" type="double" value="3.0" />
+        <param name="max_ang_vel" type="double" value="4.0" />
         <param name="max_ang_acc" type="double" value="8.0" />
         <param name="max_ang_dec" type="double" value="8.0" />
         <param name="allow_unsafe_transition" type="bool" value="true" />

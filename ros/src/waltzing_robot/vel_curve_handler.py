@@ -249,10 +249,9 @@ class VelCurveHandler(object):
         data['end_wp'] = (end_wp.x, end_wp.y, end_wp.theta)
         dist = 0
         if end_wp.control_points is None:
-            data['delta_x'] = end_wp.x - start_wp.x
-            data['delta_y'] = end_wp.y - start_wp.y
-            # data['vel'] = Utils.get_distance(data['delta_x'], data['delta_y'])/data['time']
-            dist = Utils.get_distance(data['delta_x'], data['delta_y'])
+            delta_x = end_wp.x - start_wp.x
+            delta_y = end_wp.y - start_wp.y
+            dist = Utils.get_distance(delta_x, delta_y)
         else:
             points = [(cp['x'], cp['y']) for cp in end_wp.control_points]
             points.insert(0, (start_wp.x, start_wp.y))
@@ -301,6 +300,7 @@ class VelCurveHandler(object):
         # print(data)
         if time_duration >= data['time']:
             return self.default_vel(time_duration, current_position)
+
         if 'curve_points' in data:
             dist_to_cp = Utils.get_distance_between_points(
                     current_position[:2],
@@ -309,88 +309,89 @@ class VelCurveHandler(object):
                                        data['distances'][data['curve_point_index']]
             if dist_to_cp < self.curve_point_distance_tolerance and data['curve_point_index'] < len(data['curve_points'])-1:
                 data['curve_point_index'] += 1
-                # if data['curve_point_index'] == len(data['curve_points']):
-                #     data['curve_point_index'] = -1
-                    # return self.default_vel(time_duration, current_position)
 
             curve_point_index = data['curve_point_index']
-            # print(curve_point_index)
             x_diff = data['curve_points'][curve_point_index][0] - current_position[0]
             y_diff = data['curve_points'][curve_point_index][1] - current_position[1]
-            # print(x_diff, y_diff)
             omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
                                              current_position[2])
         else:
-            omega = Utils.get_shortest_angle(math.atan2(data['delta_y'], data['delta_x']),
+            x_diff = data['end_wp'][0] - current_position[0]
+            y_diff = data['end_wp'][1] - current_position[1]
+            omega = Utils.get_shortest_angle(math.atan2(y_diff, x_diff),
                                              current_position[2])
             total_remaining_distance = Utils.get_distance_between_points(
                     current_position[:2],
                     data['end_wp'][:2])
-            if total_remaining_distance < self.curve_point_distance_tolerance:
-                total_remaining_distance = 0.0
 
-        total_remaining_ang_distance = abs(Utils.get_shortest_angle(data['end_wp'][2], current_position[2]))
-        total_remaining_time = data['time'] - time_duration
-        total_remaining_time *= 0.95
-
-        deteminant = total_remaining_time**2 - ((2 / self.max_dec) * total_remaining_distance)
-        if deteminant > 0.0:
-            req_vel_1 = self.max_dec * (total_remaining_time + deteminant**0.5)
-            req_vel_2 = self.max_dec * (total_remaining_time - deteminant**0.5)
-            # print('req_vel_1', req_vel_1)
-            # print('req_vel_2', req_vel_2)
-            if total_remaining_time > req_vel_1/self.max_dec:
-                req_vel = req_vel_1
-            elif total_remaining_time > req_vel_2/self.max_dec:
-                req_vel = req_vel_2
-            else:
-                req_vel = data['vel']
-        else:
-            req_vel = total_remaining_distance / total_remaining_time
-        req_ang_vel = total_remaining_ang_distance / total_remaining_time
-        if total_remaining_time < 0.1: # if no time left, dont bother correcting
-            req_vel = data['vel']
-            req_ang_vel = data['ang_vel']
-
-        # print('req_vel', req_vel)
-        # print('total_remaining_distance', total_remaining_distance)
-        # print('req_ang_vel', req_ang_vel)
-        # print('total_remaining_ang_distance', total_remaining_ang_distance)
-        # print('total_remaining_time', total_remaining_time)
-
-        current_linear_vel = (current_vel[0]**2 + current_vel[1]**2)**0.5
-        vel = data['vel']
-        # take care of acc and dec limits
-        if req_vel > data['vel']:
-            vel = req_vel if req_vel - current_linear_vel <= self.max_acc/self.control_rate \
-                    else current_linear_vel + self.max_acc/self.control_rate
-        else:
-            vel = req_vel if current_linear_vel - req_vel <= self.max_dec/self.control_rate \
-                    else current_linear_vel - self.max_dec/self.control_rate
+        if total_remaining_distance < self.curve_point_distance_tolerance:
+            total_remaining_distance = 0.0
 
         if time_duration < data['acc_time']: # accelerate
             vel = self.max_acc * time_duration
         elif time_duration > data['time'] - data['dec_time']: # decelerate
-            vel -= self.max_dec * (time_duration - data['time'] + data['dec_time'])
-        vel = min(vel, self.max_vel)
+            vel = data['vel'] - (self.max_dec * (time_duration - data['time'] + data['dec_time']))
+        else:
+            total_remaining_time = data['time'] - time_duration
+            # total_remaining_time *= 0.95
+
+            # req_vel = total_remaining_distance / total_remaining_time
+            d_ref = data['vel'] * (data['time'] - data['dec_time'] - time_duration)
+            d_dec = data['vel'] * data['dec_time'] * 0.5
+            d_act = total_remaining_distance - d_dec
+            k = 1.6
+            req_vel = data['vel'] + ((k * (d_act - d_ref)))
+            if total_remaining_time < 0.1: # if no time left, dont bother correcting
+                req_vel = data['vel']
+
+            # print('req_vel', req_vel)
+            # print('total_remaining_distance', total_remaining_distance)
+            # print('req_ang_vel', req_ang_vel)
+            # print('total_remaining_ang_distance', total_remaining_ang_distance)
+            # print('total_remaining_time', total_remaining_time)
+
+            current_linear_vel = (current_vel[0]**2 + current_vel[1]**2)**0.5
+            # take care of acc and dec limits
+            if req_vel > data['vel']:
+                vel = req_vel if req_vel - current_linear_vel <= self.max_acc/self.control_rate \
+                        else current_linear_vel + self.max_acc/self.control_rate
+            else:
+                vel = req_vel if current_linear_vel - req_vel <= self.max_dec/self.control_rate \
+                        else current_linear_vel - self.max_dec/self.control_rate
+            vel = min(vel, self.max_vel)
 
         if data['vel'] == 0.0: # if no linear movement are required dont't move (needed because of position error)
             vel = 0.0
 
-        ang_vel = data['ang_vel']
-        # take care of acc and dec limits
-        if req_ang_vel > data['ang_vel']:
-            ang_vel = req_ang_vel if req_ang_vel - current_vel[2] <= self.max_ang_acc/self.control_rate \
-                    else current_vel[2] + self.max_ang_acc/self.control_rate
-        else:
-            ang_vel = req_ang_vel if current_vel[2] - req_ang_vel <= self.max_ang_dec/self.control_rate \
-                    else current_vel[2] - self.max_ang_dec/self.control_rate
 
         if time_duration < data['ang_acc_time']: # accelerate
             ang_vel = self.max_ang_acc * time_duration
         elif time_duration > data['time'] - data['ang_dec_time']: # decelerate
-            ang_vel -= self.max_ang_dec * (time_duration - data['time'] + data['ang_dec_time'])
-        ang_vel = min(ang_vel, self.max_ang_vel)
+            ang_vel = data['ang_vel'] - (self.max_ang_dec * (time_duration - data['time'] + data['ang_dec_time']))
+        else:
+            total_remaining_time = data['time'] - time_duration
+            total_remaining_ang_distance = abs(Utils.get_shortest_angle(data['end_wp'][2], current_position[2]))
+            d_ref = data['ang_vel'] * (total_remaining_time - data['ang_dec_time'])
+            d_dec = data['ang_vel'] * data['ang_dec_time'] * 0.5
+            d_act = total_remaining_ang_distance - d_dec
+            k = 1.5
+            req_ang_vel = data['ang_vel'] + ((k * (d_act - d_ref)))
+            # print('total_remaining_time', total_remaining_time)
+            # print('total_remaining_ang_distance', total_remaining_ang_distance)
+            # print('req_ang_vel', req_ang_vel)
+            # print('current theta vel', current_vel[2])
+            if total_remaining_time < 0.1: # if no time left, dont bother correcting
+                req_ang_vel = data['ang_vel']
+            # take care of acc and dec limits
+            if req_ang_vel > data['ang_vel']:
+                ang_vel = req_ang_vel if req_ang_vel - abs(current_vel[2]) <= self.max_ang_acc/self.control_rate \
+                        else abs(current_vel[2]) + self.max_ang_acc/self.control_rate
+            else:
+                ang_vel = req_ang_vel if abs(current_vel[2]) - req_ang_vel <= self.max_ang_dec/self.control_rate \
+                        else abs(current_vel[2]) - self.max_ang_dec/self.control_rate
+            ang_vel = min(ang_vel, self.max_ang_vel)
+            # print('ang_vel', ang_vel)
+            # print()
 
         ang_vel_sign = -1 if data['theta'] < 0.0 else 1
 
