@@ -79,7 +79,7 @@ class WaypointFollower(object):
             rospy.logerr("File could not be read!")
             return None
 
-    def follow_waypoints(self, waypoint_config_filename=None, waypoints_obj=None, visualise_trajectory=True):
+    def follow_waypoints(self, waypoint_config_filename=None, waypoints_obj=None):
         """Follow waypoints defined by class variable with their vel curve motion
         Returns true if the whole trajectory was executed completely
 
@@ -116,8 +116,6 @@ class WaypointFollower(object):
             return False
         # print(self._vel_curve_handler)
 
-        if visualise_trajectory:
-            self.visualise_trajectory(waypoints)
         self._vel_curve_handler.reset_trajectory_data()
         # self.music_player.start_playing()
         start_time = rospy.get_time()
@@ -155,42 +153,6 @@ class WaypointFollower(object):
             self.vel_data = []
         # self.music_player.stop_playing()
         return True
-
-    def visualise_trajectory(self, waypoints):
-        """Publish PoseArray representing the trajectory
-        :waypoints: list of Waypoint obj
-        :returns: None
-
-        """
-        pose_array = PoseArray()
-        pose_array.header.frame_id = self.frame
-        pose_array.header.stamp = rospy.Time.now()
-        poses = []
-        current_time = 0.0
-        delta_time = 0.1
-        x, y, theta = self.current_position
-        last_wp_time = 0.0
-        for self._vel_curve_handler.trajectory_index, wp in enumerate(waypoints[1:]):
-            while current_time < wp.time:
-                # current position has to be given (0,0,0) because the cmd_vel
-                # are applied in robot's frame whereas the poses are published
-                # in global frame
-                x_vel, y_vel, theta_vel = self._vel_curve_handler.get_vel(
-                        current_time - last_wp_time,
-                        current_position=(x, y, theta))
-                        # current_position=(0.0, 0.0, 0.0))
-                x += x_vel*math.cos(theta)*delta_time - y_vel*math.sin(theta)*delta_time
-                y += x_vel*math.sin(theta)*delta_time + y_vel*math.cos(theta)*delta_time
-                theta += theta_vel*delta_time
-                pose = Utils.get_pose_from_x_y_theta(x, y, theta)
-                poses.append(pose)
-                current_time += delta_time
-                # time.sleep(delta_time)
-                # pose_array.poses = poses
-                # self._trajectory_pub.publish(pose_array)
-            last_wp_time = wp.time
-        pose_array.poses = poses
-        self._trajectory_pub.publish(pose_array)
 
     def _get_twist(self, x=0.0, y=0.0, theta=0.0):
         """Return twist ros message object.
